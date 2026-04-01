@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Medication {
+  id          String       @id
+  name        String
+  category    String?
+  location    String?
+  shelf       String?
+  isNoStock   Boolean      @default(false)
+  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime     @default(now())
+  inspections Inspection[]
+}
+
+model Inspection {
+  id              String     @id @default(uuid())
+  medicationId    String
+  month           Int
+  year            Int
+  expiryDate      String?
+  qtyUnder3Months Int?
+  qtyUnder8Months Int?
+  checkedAt       DateTime   @default(now())
+  medication      Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+
+  @@unique([medicationId, month, year])
+}
+
+model FireExtinguisher {
+  id          String           @id @default(uuid())
+  location    String
+  assetCode   String?
+  createdAt   DateTime         @default(now())
+  inspections FireInspection[]
+}
+
+model FireInspection {
+  id             String           @id @default(uuid())
+  extinguisherId String
+  month          Int
+  year           Int
+  nozzleStatus   String
+  pinStatus      String
+  invertStatus   String
+  gaugeStatus    String
+  overallStatus  String
+  inspector      String
+  note           String?
+  checkedAt      DateTime         @default(now())
+  extinguisher   FireExtinguisher @relation(fields: [extinguisherId], references: [id], onDelete: Cascade)
+
+  @@unique([extinguisherId, month, year])
+}
+
+model EmergencyLight {
+  id          String            @id @default(uuid())
+  location    String
+  assetCode   String?
+  createdAt   DateTime          @default(now())
+  inspections LightInspection[]
+}
+
+model LightInspection {
+  id            String         @id @default(uuid())
+  lightId       String
+  month         Int
+  year          Int
+  ledStatus     String
+  chargeStatus  String
+  testStatus    String
+  overallStatus String
+  inspector     String
+  note          String?
+  checkedAt     DateTime       @default(now())
+  light         EmergencyLight @relation(fields: [lightId], references: [id], onDelete: Cascade)
+
+  @@unique([lightId, month, year])
+}
+
+model ShiftExchange {
+  id            String   @id @default(uuid())
+  documentNo    String
+  requesterName String
+  receiverName  String
+  shiftDate     DateTime
+  shiftType     String
+  reason        String?
+  month         Int
+  year          Int
+  createdAt     DateTime @default(now())
+
+  @@unique([documentNo, month, year])
+}
+
+model MonthlyDocumentSettings {
+  id                String   @id @default(uuid())
+  month             Int
+  year              Int
+  hospitalOrderNo   String
+  hospitalOrderDate String
+  formVersion       String
+  formVersionDate   String
+  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now())
+
+  @@unique([month, year])
+}
+
+model CalendarEvent {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  allDay      Boolean  @default(false)
+  type        String
+  category    String?
+  personName  String?
+  color       String?
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([startDate])
+  @@index([type])
+}
+
+model SystemSettings {
+  id          String   @id @default("default")
+  orderNumber String   @default("")
+  orderDate   String   @default("")
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
