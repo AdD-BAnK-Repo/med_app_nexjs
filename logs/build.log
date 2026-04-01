@@ -1,0 +1,23 @@
+
+> med-expiry-checker@0.1.0 build
+> next build
+
+▲ Next.js 16.2.1 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 23.9s
+  Running TypeScript ...
+Failed to type check.
+
+./app/api/calendar/import/route.ts:57:27
+Type error: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ มกราคม: number; กุมภาพันธ์: number; มีนาคม: number; เมษายน: number; พฤษภาคม: number; มิถุนายน: number; กรกฎาคม: number; สิงหาคม: number; กันยายน: number; ตุลาคม: number; พฤศจิกายน: number; ธันวาคม: number; }'.
+  No index signature with a parameter of type 'string' was found on type '{ มกราคม: number; กุมภาพันธ์: number; มีนาคม: number; เมษายน: number; พฤษภาคม: number; มิถุนายน: number; กรกฎาคม: number; สิงหาคม: number; กันยายน: number; ตุลาคม: number; พฤศจิกายน: number; ธันวาคม: number; }'.
+
+  [90m55 |[0m               [32m'กันยายน'[0m: [35m9[0m, [32m'ตุลาคม'[0m: [35m10[0m, [32m'พฤศจิกายน'[0m: 11, 'ธันวาคม': 12
+  [90m56 |[0m             };
+[31m[1m>[0m [90m57 |[0m             [36mconst[0m month = months[monthThai] || [35m1[0m;
+  [90m   |[0m                           [31m[1m^[0m
+  [90m58 |[0m             
+  [90m59 |[0m             [90m// Create start and end dates (assume shift is 20:00-08:00)[0m
+  [90m60 |[0m             [36mconst[0m startDate = [36mnew[0m [33mDate[0m(year, month - [35m1[0m, day, [35m20[0m, [35m0[0m, [35m0[0m); [90m// 20:00[0m
+Next.js build worker exited with code: 1 and signal: null

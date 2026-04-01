@@ -1,8 +1,7 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
-import { ClipboardCheck, Settings, Pill, Activity, CalendarDays, Clock, ChevronRight, BarChart3, ShieldCheck, FileText } from "lucide-react";
+import { ClipboardCheck, Settings, ShieldCheck, FileText, Activity, CalendarDays, Clock, ChevronRight } from "lucide-react";
+import prisma from "@/lib/prisma";
 
 type DashboardStats = {
   totalMeds: number;
@@ -13,35 +12,43 @@ type DashboardStats = {
   lastUpdatedAt: string | null;
 };
 
-export default function Dashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+async function getStats(): Promise<DashboardStats> {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
 
+  const totalMeds = await prisma.medication.count();
+  const noStockMeds = await prisma.medication.count({ where: { isNoStock: true } });
+  const checkedThisMonth = await prisma.inspection.count({
+    where: {
+      month: currentMonth,
+      year: currentYear,
+      expiryDate: { not: null }
+    }
+  });
+  const lastUpdate = await prisma.inspection.findFirst({
+    orderBy: { checkedAt: 'desc' },
+    select: { checkedAt: true }
+  });
+
+  return {
+    totalMeds,
+    noStockMeds,
+    checkedThisMonth,
+    month: currentMonth,
+    year: currentYear,
+    lastUpdatedAt: lastUpdate?.checkedAt?.toISOString() || null
+  };
+}
+
+export default async function Dashboard() {
+  const stats = await getStats();
   const thaiMonths = [
     "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
     "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
   ];
   
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await fetch(`/api/dashboard?month=${currentMonth + 1}&year=${currentYear}`);
-        if (!res.ok) throw new Error("Failed to fetch stats");
-        const data = await res.json();
-        setStats(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchStats();
-  }, [currentMonth, currentYear]);
-
-  const progressPercentage = stats && stats.totalMeds > 0 
+  const progressPercentage = stats.totalMeds > 0 
     ? Math.round((stats.checkedThisMonth / stats.totalMeds) * 100) 
     : 0;
 
@@ -55,7 +62,7 @@ export default function Dashboard() {
               <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-2">ระบบบริหารจัดการยา OPD</h1>
               <p className="text-slate-300 text-lg font-medium flex items-center gap-2">
                 <CalendarDays size={20} /> 
-                ภาพรวมประจำเดือน {thaiMonths[currentMonth]} พ.ศ. {currentYear + 543}
+                ภาพรวมประจำเดือน {thaiMonths[stats.month - 1]} พ.ศ. {stats.year + 543}
               </p>
             </div>
             <div className="hidden md:flex bg-slate-700/50 p-4 rounded-2xl backdrop-blur-sm border border-slate-600/50">
@@ -63,7 +70,7 @@ export default function Dashboard() {
                 <p className="text-slate-300 text-sm font-bold mb-1">อัปเดตล่าสุด</p>
                 <p className="text-white font-mono text-sm flex items-center gap-2 justify-end">
                   <Clock size={14} className="text-blue-400" />
-                  {stats?.lastUpdatedAt ? new Date(stats.lastUpdatedAt).toLocaleString('th-TH') : '-'}
+                  {stats.lastUpdatedAt ? new Date(stats.lastUpdatedAt).toLocaleString('th-TH') : '-'}
                 </p>
               </div>
             </div>
@@ -74,7 +81,7 @@ export default function Dashboard() {
       <div className="max-w-5xl mx-auto px-4 md:px-8 -mt-16 relative z-20">
         
         {/* Progress Card */}
-        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100 mb-8 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100 mb-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-6">
             <div>
               <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
@@ -84,10 +91,10 @@ export default function Dashboard() {
             </div>
             <div className="text-right flex flex-col items-center md:items-end">
               <span className="text-4xl font-black text-blue-600 leading-none">
-                {loading ? "..." : `${progressPercentage}%`}
+                {progressPercentage}%
               </span>
               <span className="text-slate-400 font-bold text-sm mt-1">
-                ตรวจแล้ว {stats?.checkedThisMonth || 0} / {stats?.totalMeds || 0} รายการ
+                ตรวจแล้ว {stats.checkedThisMonth} / {stats.totalMeds} รายการ
               </span>
             </div>
           </div>

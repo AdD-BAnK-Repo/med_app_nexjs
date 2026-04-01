@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Edit2, Trash2, Save, X, Settings, ArrowLeft, Filter, DownloadCloud, UploadCloud } from "lucide-react";
-import Link from "next/link";
+import { Search, Plus, Edit2, Trash2, Save, X, Settings, Filter, DownloadCloud, UploadCloud, Package, Database, AlertCircle } from "lucide-react";
+import { useTheme } from '../components/ThemeContext';
 
 type Medication = {
   id: string;
@@ -18,6 +18,8 @@ export default function ManageMedications() {
   const [loading, setLoading] = useState(true);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStockStatus, setFilterStockStatus] = useState<string>("all");
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -92,7 +94,6 @@ export default function ManageMedications() {
     
     try {
       if (editingId) {
-        // Update
         const res = await fetch('/api/manage', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -102,7 +103,6 @@ export default function ManageMedications() {
         const updatedMed = await res.json();
         setMeds(prev => prev.map(m => m.id === editingId ? { ...m, ...updatedMed } : m));
       } else {
-        // Create
         const res = await fetch('/api/manage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -137,7 +137,6 @@ export default function ManageMedications() {
     }
   };
 
-  // --- Backup & Restore Handlers ---
   const handleExportJSON = () => {
     const dataStr = JSON.stringify(meds, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
@@ -160,9 +159,9 @@ export default function ManageMedications() {
         const json = JSON.parse(event.target?.result as string);
         if (!Array.isArray(json)) throw new Error("รูปแบบไฟล์ JSON ไม่ถูกต้อง");
         
-        if (!confirm(`ต้องการกู้คืนข้อมูลยาจำนวน ${json.length} รายการใช่หรือไม่?\n(ยาที่มีชื่อซ้ำกันจะถูกอัปเดตข้อมูลตู้ยา/หมวดหมู่ ส่วนยาที่ไม่มีในระบบจะถูกเพิ่มใหม่)`)) return;
+        if (!confirm(`ต้องการกู้คืนข้อมูลยาจำนวน ${json.length} รายการใช่หรือไม่?`)) return;
         
-        setIsSaving(true); // Re-use saving state for UI feedback
+        setIsSaving(true);
         const res = await fetch('/api/manage/backup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -172,247 +171,477 @@ export default function ManageMedications() {
         if (!res.ok) throw new Error('Failed to restore');
         const result = await res.json();
         alert(`นำเข้า/อัปเดตข้อมูลสำเร็จ ${result.count} รายการ`);
-        fetchMeds(); // Refresh the list
+        fetchMeds();
       } catch (err) {
-        alert('เกิดข้อผิดพลาดในการอ่านหรือนำเข้าไฟล์ JSON (กรุณาตรวจสอบโครงสร้างไฟล์)');
+        alert('เกิดข้อผิดพลาดในการอ่านหรือนำเข้าไฟล์ JSON');
         console.error(err);
       } finally {
         setIsSaving(false);
-        if (e.target) e.target.value = ''; // Reset input
+        if (e.target) e.target.value = '';
       }
     };
     reader.readAsText(file);
   };
 
+  // Get category color
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, { bg: string; border: string; text: string }> = {
+      'ยาเม็ด': { bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.4)', text: '#3b82f6' },
+      'ยาฉีด': { bg: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.4)', text: '#8b5cf6' },
+      'ยาทา': { bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.4)', text: '#10b981' },
+      'ยาจิตเวช': { bg: 'rgba(245, 87, 108, 0.1)', border: 'rgba(245, 87, 108, 0.4)', text: '#f5576c' },
+      'ยาน้ำ': { bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.4)', text: '#f59e0b' },
+    };
+    return colors[category] || { bg: 'rgba(102, 126, 234, 0.1)', border: 'rgba(102, 126, 234, 0.4)', text: '#667eea' };
+  };
+
+  // Status counts
+  const totalCount = meds.length;
+  const noStockCount = meds.filter(m => m.isNoStock).length;
+  const normalCount = totalCount - noStockCount;
+
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 font-sans">
-      {/* Header */}
-      <div className="bg-slate-800 text-white py-4 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center gap-3 font-bold text-xl tracking-tight">
-            <Settings className="text-blue-400" /> จัดการฐานข้อมูลยา
+    <div className="min-h-screen pb-24">
+      {/* Header Card */}
+      <div 
+        className="mb-6 p-6 rounded-2xl"
+        style={{
+          background: isDark ? 'rgba(26, 26, 37, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+          border: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`,
+        }}
+      >
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div 
+              className="flex h-14 w-14 items-center justify-center rounded-xl"
+              style={{
+                background: 'rgba(102, 126, 234, 0.15)',
+                border: '2px solid rgba(102, 126, 234, 0.4)',
+              }}
+            >
+              <Database className="h-7 w-7" style={{ color: '#667eea' }} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>
+                จัดการฐานข้อมูลยา
+              </h1>
+              <p style={{ color: isDark ? '#64748b' : '#64748b' }}>
+                รายการยาทั้งหมดในระบบ {totalCount} รายการ
+              </p>
+            </div>
+          </div>
+          
+          {/* Stats */}
+          <div className="flex gap-3">
+            <div 
+              className="px-4 py-2 rounded-lg"
+              style={{
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+              }}
+            >
+              <p className="text-xs font-medium" style={{ color: '#10b981' }}>ปกติ</p>
+              <p className="text-xl font-bold" style={{ color: '#10b981' }}>{normalCount}</p>
+            </div>
+            <div 
+              className="px-4 py-2 rounded-lg"
+              style={{
+                background: 'rgba(245, 158, 11, 0.1)',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
+              }}
+            >
+              <p className="text-xs font-medium" style={{ color: '#f59e0b' }}>No Stock</p>
+              <p className="text-xl font-bold" style={{ color: '#f59e0b' }}>{noStockCount}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 md:px-8 mt-8">
-        
-        {/* Header & Actions */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>รายชื่อยาทั้งหมดในระบบ</h1>
-            <p className="font-medium mt-1" style={{ color: 'var(--text-muted)' }}>มียาทั้งหมด {meds.length} รายการ (เพิ่ม, ลบ, หรือแก้ไขชื่อและตู้ยาได้ที่นี่)</p>
+      {/* Action Bar */}
+      <div 
+        className="mb-6 p-4 rounded-xl"
+        style={{
+          background: isDark ? 'rgba(26, 26, 37, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+          border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)'}`,
+        }}
+      >
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 relative">
+            <Search 
+              className="absolute left-4 top-1/2 -translate-y-1/2" 
+              size={18} 
+              style={{ color: isDark ? '#64748b' : '#94a3b8' }} 
+            />
+            <input 
+              type="text" 
+              placeholder="ค้นหาชื่อยา หรือรหัสตู้ยา..."
+              className="w-full pl-11 pr-4 py-3 rounded-lg outline-none font-medium"
+              style={{
+                background: isDark ? 'rgba(10, 10, 15, 0.5)' : 'rgba(241, 245, 249, 0.8)',
+                border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)'}`,
+                color: isDark ? '#f8fafc' : '#0f172a',
+              }}
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <div className="w-full md:w-auto flex flex-wrap gap-2">
-            <button 
-              onClick={handleExportJSON}
-              className="flex-1 md:flex-none px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
-              style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
-              title="ดาวน์โหลดไฟล์สำรองข้อมูล (JSON)"
-            >
-              <DownloadCloud size={18} className="text-blue-400" /> ส่งออก (Export)
-            </button>
-            <label className="flex-1 md:flex-none px-4 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 cursor-pointer" 
-              style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
-              title="กู้คืนข้อมูลจากไฟล์ JSON">
-              <UploadCloud size={18} className="text-orange-400" /> กู้คืน (Restore)
-              <input type="file" accept=".json" className="hidden" onChange={handleImportJSON} disabled={isSaving} />
-            </label>
-            <button 
-              onClick={() => handleOpenModal()} 
-              className="flex-1 md:flex-none px-6 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
-              style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}
-            >
-              <Plus size={20} /> เพิ่มรายการยาใหม่
-            </button>
-          </div>
-        </div>
 
-        {/* Filters */}
-        <div className="rounded-2xl p-4 mb-6 flex flex-col md:flex-row gap-4 items-center" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2" style={{ color: 'var(--text-muted)' }} size={18} />
-            <input type="text" placeholder="ค้นหาชื่อยา หรือรหัสตู้ยา..." 
-              className="w-full pl-11 pr-4 py-3 rounded-xl outline-none transition-all font-medium"
-              style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
-              value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-          </div>
-          <div className="relative w-full md:w-64">
-            <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400" size={18} />
-            <select className="w-full pl-11 pr-4 py-3 rounded-xl outline-none appearance-none font-bold"
-              style={{ backgroundColor: 'rgba(102, 126, 234, 0.1)', color: '#667eea', border: '1px solid rgba(102, 126, 234, 0.3)' }}
-              value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-              <option value="all">ทุกหมวดหมู่ (ประเภท)</option>
-              {categories.map(cat => <option key={cat} value={cat} style={{ backgroundColor: 'var(--bg-primary)' }}>{cat}</option>)}
+          {/* Filter */}
+          <div className="relative lg:w-56">
+            <Filter 
+              className="absolute left-4 top-1/2 -translate-y-1/2" 
+              size={18} 
+              style={{ color: '#667eea' }} 
+            />
+            <select 
+              className="w-full pl-11 pr-4 py-3 rounded-lg outline-none appearance-none font-medium"
+              style={{
+                background: isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)',
+                border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`,
+                color: isDark ? '#f8fafc' : '#0f172a',
+              }}
+              value={filterCategory} 
+              onChange={(e) => setFilterCategory(e.target.value)}
+            >
+              <option value="all">ทุกหมวดหมู่</option>
+              {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>
           </div>
-        </div>
 
-        {/* Data Table */}
+          {/* Actions */}
+          <div className="flex gap-2">
+            <button 
+              onClick={handleExportJSON}
+              className="px-4 py-3 rounded-lg font-medium flex items-center gap-2"
+              style={{
+                background: isDark ? 'rgba(26, 26, 37, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`,
+                color: isDark ? '#f8fafc' : '#0f172a',
+              }}
+            >
+              <DownloadCloud size={18} style={{ color: '#667eea' }} /> 
+              <span className="hidden sm:inline">ส่งออก</span>
+            </button>
+            
+            <label 
+              className="px-4 py-3 rounded-lg font-medium flex items-center gap-2 cursor-pointer"
+              style={{
+                background: isDark ? 'rgba(26, 26, 37, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                border: `1px solid ${isDark ? 'rgba(245, 158, 11, 0.4)' : 'rgba(245, 158, 11, 0.35)'}`,
+                color: isDark ? '#f8fafc' : '#0f172a',
+              }}
+            >
+              <UploadCloud size={18} style={{ color: '#f59e0b' }} /> 
+              <span className="hidden sm:inline">กู้คืน</span>
+              <input type="file" accept=".json" className="hidden" onChange={handleImportJSON} disabled={isSaving} />
+            </label>
+            
+            <button 
+              onClick={() => handleOpenModal()} 
+              className="px-5 py-3 rounded-lg font-bold flex items-center gap-2 text-white"
+              style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                border: '1px solid rgba(102, 126, 234, 0.5)',
+              }}
+            >
+              <Plus size={20} /> 
+              <span className="hidden sm:inline">เพิ่มรายการ</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Data Table */}
+      <div 
+        className="rounded-xl overflow-hidden"
+        style={{
+          background: isDark ? 'rgba(26, 26, 37, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+          border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)'}`,
+        }}
+      >
         {loading || isSaving ? (
-          <div className="text-center py-20 font-bold animate-pulse" style={{ color: '#667eea' }}>กำลังประมวลผลข้อมูล...</div>
+          <div className="text-center py-16">
+            <div 
+              className="inline-block px-6 py-3 rounded-lg"
+              style={{
+                background: isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)',
+                border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`,
+              }}
+            >
+              <span style={{ color: '#667eea' }}>กำลังประมวลผลข้อมูล...</span>
+            </div>
+          </div>
         ) : (
-          <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="text-sm" style={{ backgroundColor: 'rgba(102, 126, 234, 0.1)', borderBottom: '1px solid var(--border-color)', color: '#667eea' }}>
-                    <th className="p-4 font-bold w-16 text-center">ลำดับ</th>
-                    <th className="p-4 font-bold w-24 text-center">รหัสตู้ยา</th>
-                    <th className="p-4 font-bold w-32">หมวดหมู่</th>
-                    <th className="p-4 font-bold">ชื่อยา (Medication Name)</th>
-                    <th className="p-4 font-bold w-24 text-center">สถานะ</th>
-                    <th className="p-4 font-bold w-32 text-center">จัดการ</th>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr style={{ background: isDark ? 'rgba(102, 126, 234, 0.08)' : 'rgba(102, 126, 234, 0.06)' }}>
+                  <th className="p-4 text-center font-bold text-sm w-16" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>ลำดับ</th>
+                  <th className="p-4 text-center font-bold text-sm w-24" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>รหัสตู้ยา</th>
+                  <th className="p-4 font-bold text-sm w-36" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>หมวดหมู่</th>
+                  <th className="p-4 font-bold text-sm" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>ชื่อยา</th>
+                  <th className="p-4 text-center font-bold text-sm w-28" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>สถานะ</th>
+                  <th className="p-4 text-center font-bold text-sm w-28" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>จัดการ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMeds.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-12 text-center">
+                      <div 
+                        className="inline-flex flex-col items-center gap-3 p-6 rounded-xl"
+                        style={{
+                          background: isDark ? 'rgba(26, 26, 37, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                          border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)'}`,
+                        }}
+                      >
+                        <Package size={32} style={{ color: isDark ? '#475569' : '#94a3b8' }} />
+                        <span style={{ color: isDark ? '#64748b' : '#64748b' }}>ไม่พบรายชื่อยาที่ค้นหา</span>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {filteredMeds.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="p-10 text-center font-medium" style={{ color: 'var(--text-muted)' }}>ไม่พบรายชื่อยาที่ค้นหา</td>
-                    </tr>
-                  ) : (
-                    filteredMeds.map((med, index) => (
-                      <tr key={med.id} className="transition-colors" style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: med.isNoStock ? 'rgba(245, 158, 11, 0.05)' : 'transparent' }}>
-                        <td className="p-4 text-center font-medium" style={{ color: 'var(--text-muted)' }}>{index + 1}</td>
+                ) : (
+                  filteredMeds.map((med, index) => {
+                    const catColor = getCategoryColor(med.category);
+                    return (
+                      <tr 
+                        key={med.id} 
+                        style={{ 
+                          borderBottom: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)'}`,
+                          background: med.isNoStock 
+                            ? (isDark ? 'rgba(245, 158, 11, 0.05)' : 'rgba(245, 158, 11, 0.03)')
+                            : 'transparent'
+                        }}
+                      >
+                        <td className="p-4 text-center" style={{ color: isDark ? '#64748b' : '#64748b' }}>
+                          {index + 1}
+                        </td>
                         <td className="p-4 text-center">
-                          <span className="px-2 py-1 rounded font-bold text-xs" style={{ backgroundColor: med.shelf ? 'var(--bg-tertiary)' : 'transparent', color: med.shelf ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                            {med.shelf || "-"}
-                          </span>
+                          {med.shelf ? (
+                            <span 
+                              className="px-2 py-1 rounded font-bold text-xs"
+                              style={{
+                                background: isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)',
+                                border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`,
+                                color: '#667eea',
+                              }}
+                            >
+                              {med.shelf}
+                            </span>
+                          ) : (
+                            <span style={{ color: isDark ? '#475569' : '#cbd5e1' }}>-</span>
+                          )}
                         </td>
                         <td className="p-4">
-                          <span className="font-bold px-2.5 py-1 rounded-md text-xs whitespace-nowrap" style={{ backgroundColor: 'rgba(102, 126, 234, 0.2)', color: '#667eea', border: '1px solid rgba(102, 126, 234, 0.3)' }}>
+                          <span 
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap"
+                            style={{
+                              background: catColor.bg,
+                              border: `1px solid ${catColor.border}`,
+                              color: catColor.text,
+                            }}
+                          >
                             {med.category}
                           </span>
                         </td>
-                        <td className="p-4 font-bold" style={{ color: 'var(--text-primary)' }}>{med.name}</td>
+                        <td className="p-4 font-medium" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>
+                          {med.name}
+                        </td>
                         <td className="p-4 text-center">
                           {med.isNoStock ? (
-                            <span className="font-bold px-2.5 py-1 rounded-md text-xs whitespace-nowrap" style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                            <span 
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap"
+                              style={{
+                                background: 'rgba(245, 158, 11, 0.1)',
+                                border: '1px solid rgba(245, 158, 11, 0.4)',
+                                color: '#f59e0b',
+                              }}
+                            >
                               No Stock
                             </span>
                           ) : (
-                            <span className="font-bold px-2.5 py-1 rounded-md text-xs whitespace-nowrap" style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                            <span 
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap"
+                              style={{
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                border: '1px solid rgba(16, 185, 129, 0.4)',
+                                color: '#10b981',
+                              }}
+                            >
                               ปกติ
                             </span>
                           )}
                         </td>
-                        <td className="p-4 flex items-center justify-center gap-2">
-                          <button 
-                            onClick={() => handleOpenModal(med)}
-                            className="p-2 rounded-lg transition-colors" style={{ color: '#667eea' }} title="แก้ไข"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(med.id, med.name)}
-                            className="p-2 rounded-lg transition-colors" style={{ color: '#ef4444' }} title="ลบ"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                        <td className="p-4">
+                          <div className="flex items-center justify-center gap-1">
+                            <button 
+                              onClick={() => handleOpenModal(med)}
+                              className="p-2 rounded-lg"
+                              style={{
+                                background: 'rgba(102, 126, 234, 0.1)',
+                                border: '1px solid rgba(102, 126, 234, 0.3)',
+                              }}
+                              title="แก้ไข"
+                            >
+                              <Edit2 size={16} style={{ color: '#667eea' }} />
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(med.id, med.name)}
+                              className="p-2 rounded-lg"
+                              style={{
+                                background: 'rgba(245, 87, 108, 0.1)',
+                                border: '1px solid rgba(245, 87, 108, 0.3)',
+                              }}
+                              title="ลบ"
+                            >
+                              <Trash2 size={16} style={{ color: '#f5576c' }} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
 
-      {/* Add / Edit Modal */}
+      {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-[100] p-4" style={{ backgroundColor: 'rgba(15, 15, 26, 0.8)', backdropFilter: 'blur(10px)' }}>
-          <div className="rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-[100] p-4"
+          style={{ backgroundColor: 'rgba(10, 10, 15, 0.7)' }}
+        >
+          <div 
+            className="w-full max-w-md rounded-2xl p-6"
+            style={{
+              background: isDark ? 'rgba(26, 26, 37, 0.95)' : 'rgba(255, 255, 255, 0.98)',
+              border: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.4)' : 'rgba(102, 126, 234, 0.35)'}`,
+            }}
+          >
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              <h2 className="text-xl font-bold" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>
                 {editingId ? "แก้ไขข้อมูลยา" : "เพิ่มรายการยาใหม่"}
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-full transition-colors" style={{ color: 'var(--text-muted)' }}>
-                <X size={20} />
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="p-2 rounded-lg"
+                style={{
+                  background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                }}
+              >
+                <X size={20} style={{ color: isDark ? '#64748b' : '#64748b' }} />
               </button>
             </div>
             
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>หมวดหมู่ยา (Category) <span className="text-red-400">*</span></label>
-                <div className="relative">
-                  <select 
-                    className="w-full pl-4 pr-10 py-3 rounded-xl outline-none appearance-none font-bold"
-                    style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
-                    value={formCategory} onChange={(e) => setFormCategory(e.target.value)}
-                  >
-                    {categories.map(cat => <option key={cat} value={cat} style={{ backgroundColor: 'var(--bg-primary)' }}>{cat}</option>)}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4" style={{ color: 'var(--text-muted)' }}>
-                    ▼
-                  </div>
-                </div>
+                <label className="block text-sm font-medium mb-2" style={{ color: isDark ? '#94a3b8' : '#475569' }}>
+                  หมวดหมู่ยา <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <select 
+                  className="w-full px-4 py-3 rounded-lg outline-none font-medium"
+                  style={{
+                    background: isDark ? 'rgba(10, 10, 15, 0.5)' : 'rgba(241, 245, 249, 0.8)',
+                    border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`,
+                    color: isDark ? '#f8fafc' : '#0f172a',
+                  }}
+                  value={formCategory} 
+                  onChange={(e) => setFormCategory(e.target.value)}
+                >
+                  {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                </select>
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>รหัสตู้ยา/ชั้นวาง (Shelf Number)</label>
+                <label className="block text-sm font-medium mb-2" style={{ color: isDark ? '#94a3b8' : '#475569' }}>
+                  รหัสตู้ยา/ชั้นวาง
+                </label>
                 <input 
                   type="text" 
-                  value={formShelf} onChange={(e) => setFormShelf(e.target.value.toUpperCase())}
-                  placeholder="เช่น A1, B12, C5 (ถ้าไม่มีเว้นว่างไว้)"
-                  className="w-full px-4 py-3 rounded-xl outline-none font-bold placeholder-slate-500"
-                  style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
+                  value={formShelf} 
+                  onChange={(e) => setFormShelf(e.target.value.toUpperCase())}
+                  placeholder="เช่น A1, B12 (ถ้าไม่มีเว้นว่างไว้)"
+                  className="w-full px-4 py-3 rounded-lg outline-none font-medium"
+                  style={{
+                    background: isDark ? 'rgba(10, 10, 15, 0.5)' : 'rgba(241, 245, 249, 0.8)',
+                    border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`,
+                    color: isDark ? '#f8fafc' : '#0f172a',
+                  }}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>ชื่อยา (Medication Name) <span className="text-red-400">*</span></label>
+                <label className="block text-sm font-medium mb-2" style={{ color: isDark ? '#94a3b8' : '#475569' }}>
+                  ชื่อยา <span style={{ color: '#ef4444' }}>*</span>
+                </label>
                 <input 
                   type="text" 
-                  value={formName} onChange={(e) => setFormName(e.target.value)}
+                  value={formName} 
+                  onChange={(e) => setFormName(e.target.value)}
                   placeholder="ระบุชื่อยา..."
-                  className="w-full px-4 py-3 rounded-xl outline-none font-bold placeholder-slate-500"
-                  style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
+                  className="w-full px-4 py-3 rounded-lg outline-none font-medium"
+                  style={{
+                    background: isDark ? 'rgba(10, 10, 15, 0.5)' : 'rgba(241, 245, 249, 0.8)',
+                    border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`,
+                    color: isDark ? '#f8fafc' : '#0f172a',
+                  }}
                 />
               </div>
 
-              <div className="flex items-center gap-3 p-4 rounded-xl mt-4" style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+              <div 
+                className="flex items-center gap-3 p-4 rounded-lg"
+                style={{
+                  background: 'rgba(245, 158, 11, 0.08)',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                }}
+              >
                 <input 
                   type="checkbox" 
                   id="isNoStock"
                   checked={formIsNoStock}
                   onChange={(e) => setFormIsNoStock(e.target.checked)}
                   className="w-5 h-5 rounded"
-                  style={{ accentColor: '#f59e0b' }}
                 />
-                <label htmlFor="isNoStock" className="text-sm font-bold cursor-pointer" style={{ color: '#fbbf24' }}>
-                  เป็นยา No Stock (ไม่จัดเก็บในคลัง OPD)
-                  <p className="text-xs font-normal mt-0.5" style={{ color: 'rgba(251, 191, 36, 0.7)' }}>ยาที่ติ๊กนี้จะไม่นำมาคิดในระบบตรวจวันหมดอายุ</p>
-                </label>
+                <div>
+                  <label htmlFor="isNoStock" className="text-sm font-medium cursor-pointer" style={{ color: '#f59e0b' }}>
+                    เป็นยา No Stock
+                  </label>
+                  <p className="text-xs" style={{ color: isDark ? '#94a3b8' : '#64748b' }}>
+                    ยาที่ติ๊กนี้จะไม่นำมาคิดในระบบตรวจวันหมดอายุ
+                  </p>
+                </div>
               </div>
             </div>
             
-            <div className="mt-8 flex gap-3">
+            <div className="mt-6 flex gap-3">
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="flex-1 py-4 rounded-xl font-bold transition-colors"
-                style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                className="flex-1 py-3 rounded-lg font-medium"
+                style={{
+                  background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                  border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+                  color: isDark ? '#94a3b8' : '#475569',
+                }}
               >
                 ยกเลิก
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving || !formName.trim() || !formCategory}
-                className="flex-[2] py-4 rounded-xl font-black text-white shadow-lg transition-all flex justify-center items-center gap-2"
-                style={{ 
-                  background: (isSaving || !formName.trim()) ? 'var(--bg-tertiary)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: (isSaving || !formName.trim()) ? 'var(--text-muted)' : 'white',
-                  cursor: (isSaving || !formName.trim()) ? 'not-allowed' : 'pointer'
+                className="flex-[2] py-3 rounded-lg font-bold text-white flex justify-center items-center gap-2"
+                style={{
+                  background: (isSaving || !formName.trim()) 
+                    ? (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)')
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.4)' : 'rgba(102, 126, 234, 0.35)'}`,
+                  cursor: (isSaving || !formName.trim()) ? 'not-allowed' : 'pointer',
                 }}
               >
-                {isSaving ? (
-                  <span className="animate-pulse">กำลังบันทึก...</span>
-                ) : (
-                  <>
-                    <Save size={20} /> บันทึกข้อมูล
-                  </>
-                )}
+                {isSaving ? 'กำลังบันทึก...' : <><Save size={18} /> บันทึกข้อมูล</>}
               </button>
             </div>
           </div>

@@ -35,10 +35,10 @@ export default function RootLayout({
         <ThemeProvider>
           <SidebarProvider>
             <div className="flex min-h-screen">
-              <Sidebar />
-              <div className="flex flex-1 flex-col min-w-0 lg:ml-64">
-                <Navbar />
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
+              <aside className="print:hidden"><Sidebar /></aside>
+              <div className="flex flex-1 flex-col min-w-0 lg:ml-64 print:ml-0">
+                <header className="print:hidden"><Navbar /></header>
+                <main className="flex-1 p-4 sm:p-6 lg:p-8 transition-colors duration-300 print:p-0 print:block">
                   <div className="mx-auto max-w-7xl">
                     {children}
                   </div>

@@ -14,24 +14,25 @@ import {
   X,
   Pill,
   ChevronRight,
-  CalendarDays
+  CalendarDays,
+  Sparkles
 } from 'lucide-react';
 
 const menuItems = [
-  { href: '/', label: 'หน้าหลัก', icon: Home },
-  { href: '/check', label: 'ตรวจอายุยา', icon: ClipboardCheck },
-  { href: '/check-nostock', label: 'ยา No Stock', icon: Pill },
-  { href: '/manage', label: 'จัดการข้อมูล', icon: Settings },
-  { href: '/safety', label: 'ความปลอดภัย', icon: ShieldCheck },
-  { href: '/shift-exchange', label: 'ขายเวร', icon: FileText },
-  { href: '/calendar', label: 'ตารางงานและเวร', icon: CalendarDays },
+  { href: '/', label: 'หน้าหลัก', icon: Home, description: 'ภาพรวมระบบ' },
+  { href: '/check', label: 'ตรวจอายุยา', icon: ClipboardCheck, description: 'ตรวจสอบวันหมดอายุ' },
+  { href: '/check-nostock', label: 'ยา No Stock', icon: Pill, description: 'รายการยาหมด' },
+  { href: '/manage', label: 'จัดการข้อมูล', icon: Settings, description: 'ฐานข้อมูลยา' },
+  { href: '/safety', label: 'ความปลอดภัย', icon: ShieldCheck, description: 'ตรวจอุปกรณ์' },
+  { href: '/shift-exchange', label: 'ขายเวร', icon: FileText, description: 'เอกสารเวร' },
+  { href: '/calendar', label: 'ตารางงานและเวร', icon: CalendarDays, description: 'ปฏิทิน' },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { isOpen, close } = useSidebar();
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   return (
     <>
@@ -39,81 +40,122 @@ export function Sidebar() {
       {isOpen && (
         <div 
           className="fixed inset-0 z-40 backdrop-blur-sm transition-opacity lg:hidden"
-          style={{ backgroundColor: isDark ? 'rgba(15, 15, 26, 0.8)' : 'rgba(0, 0, 0, 0.5)' }}
+          style={{ backgroundColor: isDark ? 'rgba(10, 10, 15, 0.8)' : 'rgba(0, 0, 0, 0.5)' }}
           onClick={close}
         />
       )}
 
       {/* Sidebar */}
       <aside 
-        className={`fixed left-0 top-0 z-50 h-full w-64 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed left-0 top-0 z-50 h-full w-72 transform transition-transform duration-300 ease-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ 
           background: isDark 
-            ? 'linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)' 
+            ? 'linear-gradient(180deg, #12121a 0%, #0a0a0f 100%)' 
             : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-          borderRight: isDark ? '1px solid #2d2d44' : '1px solid #e2e8f0'
+          borderRight: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.1)'}`,
         }}
       >
         {/* Header */}
         <div 
-          className="flex h-16 items-center justify-between px-4" 
-          style={{ borderBottom: isDark ? '1px solid #2d2d44' : '1px solid #e2e8f0' }}
+          className="flex h-16 items-center justify-between px-5" 
+          style={{ 
+            borderBottom: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)'}`,
+            background: isDark ? 'rgba(102, 126, 234, 0.03)' : 'rgba(102, 126, 234, 0.02)'
+          }}
         >
           <div className="flex items-center gap-3">
             <div 
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-lg"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-lg transition-all duration-300 hover:scale-105 hover:rotate-3"
               style={{ 
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                boxShadow: '0 0 20px rgba(102, 126, 234, 0.5)'
+                boxShadow: isDark ? '0 0 20px rgba(102, 126, 234, 0.5)' : '0 4px 15px rgba(102, 126, 234, 0.3)',
               }}
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-              </svg>
+              <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="font-bold leading-tight" style={{ 
-                background: 'linear-gradient(135deg, #667eea 0%, #f093fb 50%, #f5576c 100%)', 
-                WebkitBackgroundClip: 'text', 
-                WebkitTextFillColor: 'transparent' 
-              }}>ระบบยา</h1>
+              <h1 className="font-bold leading-tight"> 
+                <span className="gradient-text">ระบบยา</span>
+              </h1>
               <p className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>OPD Dashboard</p>
             </div>
           </div>
           <button 
             onClick={close}
-            className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors lg:hidden"
-            style={{ color: isDark ? '#94a3b8' : '#64748b' }}
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 hover:scale-110 lg:hidden"
+            style={{ 
+              color: isDark ? '#94a3b8' : '#64748b',
+              background: isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)',
+            }}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="space-y-1 p-3">
-          {menuItems.map((item) => {
+        <nav className="space-y-1 p-4">
+          <p 
+            className="px-3 py-2 text-xs font-semibold uppercase tracking-wider"
+            style={{ color: isDark ? '#64748b' : '#94a3b8' }}
+          >
+            เมนูหลัก
+          </p>
+          {menuItems.map((item, index) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={close}
-                className="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all"
+                className="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-300"
                 style={{
                   background: isActive 
-                    ? 'linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%)' 
+                    ? isDark 
+                      ? 'linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.1) 100%)' 
+                      : 'linear-gradient(90deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.05) 100%)'
                     : 'transparent',
-                  color: isActive ? '#667eea' : (isDark ? '#94a3b8' : '#64748b'),
-                  border: isActive ? '1px solid rgba(102, 126, 234, 0.3)' : '1px solid transparent'
+                  color: isActive 
+                    ? '#667eea' 
+                    : (isDark ? '#94a3b8' : '#64748b'),
+                  border: isActive 
+                    ? `1px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}'` 
+                    : '1px solid transparent',
+                  transform: isActive ? 'translateX(4px)' : 'translateX(0)',
                 }}
               >
-                <item.icon 
-                  className="h-5 w-5 transition-colors" 
-                  style={{ color: isActive ? '#667eea' : (isDark ? '#64748b' : '#94a3b8') }} 
-                />
-                <span className="flex-1">{item.label}</span>
+                {/* Active Indicator */}
                 {isActive && (
-                  <ChevronRight className="h-4 w-4" style={{ color: '#667eea' }} />
+                  <div 
+                    className="absolute left-0 w-1 h-8 rounded-r-full"
+                    style={{
+                      background: 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)',
+                      boxShadow: '0 0 10px rgba(102, 126, 234, 0.5)',
+                    }}
+                  />
+                )}
+                
+                <item.icon 
+                  className="h-5 w-5 transition-all duration-300 group-hover:scale-110" 
+                  style={{ 
+                    color: isActive 
+                      ? '#667eea' 
+                      : (isDark ? '#64748b' : '#94a3b8'),
+                  }} 
+                />
+                <div className="flex-1">
+                  <span className="block">{item.label}</span>
+                  <span 
+                    className="block text-xs transition-opacity duration-300"
+                    style={{ 
+                      color: isDark ? '#475569' : '#94a3b8',
+                      opacity: isActive ? 1 : 0.7
+                    }}
+                  >
+                    {item.description}
+                  </span>
+                </div>
+                {isActive && (
+                  <ChevronRight className="h-4 w-4 animate-pulse" style={{ color: '#667eea' }} />
                 )}
               </Link>
             );
@@ -123,24 +165,48 @@ export function Sidebar() {
         {/* Footer */}
         <div 
           className="absolute bottom-0 left-0 right-0 p-4" 
-          style={{ borderTop: isDark ? '1px solid #2d2d44' : '1px solid #e2e8f0' }}
+          style={{ 
+            borderTop: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)'}`,
+            background: isDark ? 'rgba(102, 126, 234, 0.02)' : 'rgba(102, 126, 234, 0.01)'
+          }}
         >
+          {/* User Info Card */}
           <div 
-            className="mb-3 rounded-xl p-3" 
+            className="mb-3 rounded-xl p-3 transition-all duration-300 hover:scale-[1.02]"
             style={{ 
-              backgroundColor: isDark ? '#1a1a2e' : '#f8fafc',
-              border: isDark ? '1px solid #2d2d44' : '1px solid #e2e8f0'
+              background: isDark 
+                ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%)' 
+                : 'linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.03) 100%)',
+              border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.1)'}`,
             }}
           >
-            <p className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>ผู้ใช้งาน</p>
-            <p className="font-semibold" style={{ color: isDark ? '#e2e8f0' : '#1e293b' }}>เภสัชกร</p>
-            <p className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>ผู้ดูแลระบบ</p>
+            <div className="flex items-center gap-3">
+              <div 
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-white font-semibold"
+                style={{ 
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                }}
+              >
+                ภ
+              </div>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>เภสัชกร</p>
+                <p className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>ผู้ดูแลระบบ</p>
+              </div>
+            </div>
           </div>
+          
+          {/* Logout Button */}
           <button 
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all"
-            style={{ color: isDark ? '#94a3b8' : '#64748b' }}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 hover:scale-[1.02]"
+            style={{ 
+              color: isDark ? '#94a3b8' : '#64748b',
+              background: isDark ? 'rgba(245, 87, 108, 0.05)' : 'rgba(245, 87, 108, 0.03)',
+              border: `1px solid ${isDark ? 'rgba(245, 87, 108, 0.1)' : 'rgba(245, 87, 108, 0.08)'}`,
+            }}
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-5 w-5 text-rose-500" />
             <span>ออกจากระบบ</span>
           </button>
         </div>

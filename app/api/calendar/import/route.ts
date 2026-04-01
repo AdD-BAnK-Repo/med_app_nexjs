@@ -49,7 +49,7 @@ function parseScheduleData() {
             const year = yearThai - 543;
             
             // Convert Thai month to number (1-12)
-            const months = {
+            const months: Record<string, number> = {
               'มกราคม': 1, 'กุมภาพันธ์': 2, 'มีนาคม': 3, 'เมษายน': 4,
               'พฤษภาคม': 5, 'มิถุนายน': 6, 'กรกฎาคม': 7, 'สิงหาคม': 8,
               'กันยายน': 9, 'ตุลาคม': 10, 'พฤศจิกายน': 11, 'ธันวาคม': 12

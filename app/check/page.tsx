@@ -301,24 +301,32 @@ export default function Home() {
 
   // Print Template
   const PrintTemplate = () => (
-    <div className="hidden print:block font-sans text-sm pb-10">
-      <div className="text-center mb-6">
-        <h1 className="text-xl font-bold">รายงานตรวจสอบวันหมดอายุยา ประจำเดือน {thaiMonths[refMonth]} พ.ศ. {getThaiYear(refYear)}</h1>
-        <h2 className="text-lg font-bold mt-1">ห้องยา OPD</h2>
-        <div className="flex justify-between mt-6 px-10">
+    <div className="hidden print:block font-sans text-sm pb-10 print-area">
+      <div className="text-center mb-6 print-header-section">
+        <h1 className="text-xl font-bold" style={{ color: '#000000' }}>รายงานตรวจสอบวันหมดอายุยา ประจำเดือน {thaiMonths[refMonth]} พ.ศ. {getThaiYear(refYear)}</h1>
+        <h2 className="text-lg font-bold mt-1" style={{ color: '#000000' }}>ห้องยา OPD</h2>
+        <div className="flex justify-between mt-6 px-10" style={{ color: '#000000' }}>
             <p>ตรวจสอบโดยอ้างอิง ณ: เดือน {thaiMonths[refMonth]} พ.ศ. {getThaiYear(refYear)}</p>
             <p>ผู้ตรวจสอบ: นายพงศ์ภพ วงษ์ประเสริฐ</p>
         </div>
       </div>
-      <table className="w-full border-collapse border border-gray-800 mt-4">
+      <table className="w-full border-collapse border border-black mt-4 print-table" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
         <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-gray-800 p-2 w-12 text-center">ลำดับ</th>
-            <th className="border border-gray-800 p-2">รายชื่อยา</th>
-            <th className="border border-gray-800 p-2 w-28 text-center whitespace-nowrap">วันหมดอายุ</th>
-            <th className="border border-gray-800 p-2 w-28 text-xs text-center whitespace-nowrap">จำนวนยา {'<'} 3ด.</th>
-            <th className="border border-gray-800 p-2 w-28 text-xs text-center whitespace-nowrap">จำนวนยา {'<'} 8ด.</th>
-            <th className="border border-gray-800 p-2 w-24 text-center">หมายเหตุ</th>
+          <tr className="print-header" style={{ backgroundColor: '#d1d5db !important', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+            <th className="border border-black p-2 w-12 text-center" style={{ backgroundColor: '#d1d5db', color: '#000000' }}>ลำดับ</th>
+            <th className="border border-black p-2" style={{ backgroundColor: '#d1d5db', color: '#000000' }}>รายชื่อยา</th>
+            <th className="border border-black p-2 w-28 text-center whitespace-nowrap" style={{ backgroundColor: '#d1d5db', color: '#000000' }}>วันหมดอายุ</th>
+            <th className="border border-black p-2 w-32 text-center whitespace-nowrap" style={{ backgroundColor: '#d1d5db', color: '#000000' }}>
+              <div>จำนวนยา</div>
+              <div>{'(< 3 เดือน)'}</div>
+              <div className="text-[10px] font-normal">({new Date().toLocaleDateString('th-TH')})</div>
+            </th>
+            <th className="border border-black p-2 w-32 text-center whitespace-nowrap" style={{ backgroundColor: '#d1d5db', color: '#000000' }}>
+              <div>จำนวนยา</div>
+              <div>{'(< 8 เดือน)'}</div>
+              <div className="text-[10px] font-normal">({new Date().toLocaleDateString('th-TH')})</div>
+            </th>
+            <th className="border border-black p-2 w-24 text-center" style={{ backgroundColor: '#d1d5db', color: '#000000' }}>หมายเหตุ</th>
           </tr>
         </thead>
         <tbody>
@@ -327,24 +335,43 @@ export default function Home() {
             if (catMeds.length === 0) return null;
             return (
               <React.Fragment key={cat}>
-                <tr>
-                  <td colSpan={6} className="border border-gray-800 p-2 font-bold bg-gray-50">{cat}</td>
+                <tr className="print-category" style={{ backgroundColor: '#f3f4f6 !important', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                  <td colSpan={6} className="border border-black p-2 font-bold bg-gray-100 text-black" style={{ backgroundColor: '#f3f4f6', color: '#000000' }}>{cat}</td>
                 </tr>
-                {catMeds.map((med, index) => (
-                  <tr key={med.id}>
-                    <td className="border border-gray-800 p-2 text-center">{index + 1}</td>
-                    <td className="border border-gray-800 p-2">
-                      {med.name}
-                      {med.isNoStock && <span className="ml-2 text-[10px] text-orange-600 bg-orange-50 px-1 py-0.5 rounded border border-orange-200">No Stock</span>}
-                    </td>
-                    <td className="border border-gray-800 p-2 text-center whitespace-nowrap">{med.expiryDate || ""}</td>
-                    <td className="border border-gray-800 p-2 text-center">{med.qtyUnder3Months !== null ? med.qtyUnder3Months : ""}</td>
-                    <td className="border border-gray-800 p-2 text-center">{med.qtyUnder8Months !== null ? med.qtyUnder8Months : ""}</td>
-                    <td className="border border-gray-800 p-2 text-center text-xs">
-                        {med.status === "expired" ? "หมดอายุ" : med.status === "warning" ? "ใกล้หมดอายุ" : ""}
-                    </td>
-                  </tr>
-                ))}
+                {catMeds.map((med, index) => {
+                  // Determine row background color based on months left
+                  let rowBgColor = '#ffffff';
+                  let highlightClass = '';
+                  if (med.monthsLeft !== undefined && med.monthsLeft !== null) {
+                    if (med.monthsLeft <= 3) {
+                      rowBgColor = '#fca5a5'; // Light red for <= 3 months
+                      highlightClass = 'print-row-red';
+                    } else if (med.monthsLeft <= 8) {
+                      rowBgColor = '#fdba74'; // Light orange for <= 8 months
+                      highlightClass = 'print-row-orange';
+                    }
+                  }
+                  
+                  return (
+                    <tr key={med.id} className={highlightClass} style={{ 
+                      backgroundColor: rowBgColor,
+                      WebkitPrintColorAdjust: 'exact',
+                      printColorAdjust: 'exact'
+                    }}>
+                      <td className="border border-black p-2 text-center text-black" style={{ color: '#000000' }}>{index + 1}</td>
+                      <td className="border border-black p-2 text-black" style={{ color: '#000000' }}>
+                        {med.name}
+                        {med.isNoStock && <span className="ml-2 text-[10px] text-orange-600 bg-orange-50 px-1 py-0.5 rounded border border-orange-200">No Stock</span>}
+                      </td>
+                      <td className="border border-black p-2 text-center whitespace-nowrap text-black" style={{ color: '#000000' }}>{med.expiryDate || ""}</td>
+                      <td className="border border-black p-2 text-center text-black" style={{ color: '#000000' }}>{med.qtyUnder3Months !== null ? med.qtyUnder3Months : ""}</td>
+                      <td className="border border-black p-2 text-center text-black" style={{ color: '#000000' }}>{med.qtyUnder8Months !== null ? med.qtyUnder8Months : ""}</td>
+                      <td className="border border-black p-2 text-center text-xs text-black" style={{ color: '#000000' }}>
+                          {med.status === "expired" ? "หมดอายุ" : med.status === "warning" ? "ใกล้หมดอายุ" : ""}
+                      </td>
+                    </tr>
+                  );
+                })}
               </React.Fragment>
             );
           })}
@@ -606,7 +633,7 @@ export default function Home() {
             ))}
             
             {filteredMeds.length === 0 && (
-              <div className="text-center py-20 text-lg w-full rounded-2xl" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px dashed var(--border-color)' }}>
+              <div className="text-center py-20 text-lg w-full rounded-2xl print:hidden" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px dashed var(--border-color)' }}>
                 <Search size={48} className="mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
                 ไม่พบข้อมูลที่ตรงกับเงื่อนไข
               </div>

@@ -2,38 +2,57 @@
 
 import { useSidebar } from './SidebarContext';
 import { useTheme } from './ThemeContext';
-import { Menu, Calendar, Bell, Sun, Moon } from 'lucide-react';
+import { Menu, Calendar, Bell, Sun, Moon, Monitor } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 
 export function Navbar() {
   const { toggle } = useSidebar();
-  const { theme, toggleTheme } = useTheme();
+  const { resolvedTheme, toggleTheme } = useTheme();
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const themeMenuRef = useRef<HTMLDivElement>(null);
+
+  const isDark = resolvedTheme === 'dark';
 
   const currentDate = new Date().toLocaleDateString('th-TH', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    weekday: 'short'
   });
 
-  const isDark = theme === 'dark';
+  // Close theme menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
+        setShowThemeMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <header 
       className="sticky top-0 z-40 w-full transition-all duration-300"
       style={{ 
-        backgroundColor: isDark ? 'rgba(15, 15, 26, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(10px)',
-        borderBottom: isDark ? '1px solid #2d2d44' : '1px solid #e2e8f0'
+        background: isDark 
+          ? 'rgba(10, 10, 15, 0.8)' 
+          : 'rgba(255, 255, 255, 0.85)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)'}`,
       }}
     >
       <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-        {/* Left */}
+        {/* Left Section */}
         <div className="flex items-center gap-3">
           <button
             onClick={toggle}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl transition-all active:scale-95 lg:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300 active:scale-95 lg:hidden hover:scale-105"
             style={{ 
-              backgroundColor: isDark ? '#1a1a2e' : '#f1f5f9',
-              color: isDark ? '#cbd5e1' : '#475569'
+              background: isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)',
+              color: isDark ? '#94a3b8' : '#64748b',
+              border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)'}`,
             }}
           >
             <Menu className="h-5 w-5" />
@@ -42,10 +61,10 @@ export function Navbar() {
           {/* Logo/Brand - Desktop */}
           <div className="hidden lg:flex items-center gap-3">
             <div 
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-lg"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-white transition-all duration-300 hover:scale-105 hover:rotate-3"
               style={{ 
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                boxShadow: '0 0 20px rgba(102, 126, 234, 0.5)'
+                boxShadow: isDark ? '0 0 20px rgba(102, 126, 234, 0.5)' : '0 4px 15px rgba(102, 126, 234, 0.3)',
               }}
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -53,64 +72,96 @@ export function Navbar() {
               </svg>
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-tight" style={{ 
-                background: 'linear-gradient(135deg, #667eea 0%, #f093fb 50%, #f5576c 100%)', 
-                WebkitBackgroundClip: 'text', 
-                WebkitTextFillColor: 'transparent' 
-              }}>ระบบจัดการยา</h1>
+              <h1 className="text-lg font-bold leading-tight"> 
+                <span className="gradient-text">ระบบจัดการยา</span>
+              </h1>
               <p className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>OPD Dashboard</p>
             </div>
           </div>
         </div>
 
-        {/* Center - Date */}
+        {/* Center - Date with icon */}
         <div 
           className="hidden md:flex items-center gap-2 rounded-full px-4 py-2 text-sm"
           style={{ 
-            backgroundColor: isDark ? 'rgba(26, 26, 46, 0.8)' : 'rgba(241, 245, 249, 0.8)',
+            background: isDark ? 'rgba(102, 126, 234, 0.08)' : 'rgba(102, 126, 234, 0.05)',
             backdropFilter: 'blur(10px)',
-            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
-            color: isDark ? '#cbd5e1' : '#475569'
+            border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.1)'}`,
+            color: isDark ? '#94a3b8' : '#64748b'
           }}
         >
-          <Calendar className="h-4 w-4" style={{ color: '#667eea' }} />
+          <Calendar className="h-4 w-4 text-blue-500" />
           <span className="font-medium">{currentDate}</span>
         </div>
 
-        {/* Right */}
+        {/* Right Section */}
         <div className="flex items-center gap-2">
-          {/* Theme Toggle */}
-          <button 
-            onClick={toggleTheme}
-            className="flex h-10 w-10 items-center justify-center rounded-xl transition-all"
-            style={{ 
-              backgroundColor: isDark ? '#1a1a2e' : '#f1f5f9',
-              color: isDark ? '#fbbf24' : '#f59e0b',
-              border: isDark ? '1px solid #2d2d44' : '1px solid #e2e8f0'
-            }}
-            title={isDark ? 'เปลี่ยนเป็นธีมสว่าง' : 'เปลี่ยนเป็นธีมมืด'}
-          >
-            {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
+          {/* Theme Toggle Button */}
+          <div className="relative" ref={themeMenuRef}>
+            <button 
+              onClick={() => setShowThemeMenu(!showThemeMenu)}
+              className="flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300 hover:scale-105"
+              style={{ 
+                background: isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)',
+                color: isDark ? '#fbbf24' : '#f59e0b',
+                border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)'}`,
+              }}
+              title={isDark ? 'เปลี่ยนเป็นธีมสว่าง' : 'เปลี่ยนเป็นธีมมืด'}
+            >
+              {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            </button>
 
-          {/* Notification */}
+            {/* Theme Dropdown */}
+            {showThemeMenu && (
+              <div 
+                className="absolute right-0 mt-2 w-40 rounded-xl py-2 shadow-xl animate-fade-in"
+                style={{ 
+                  background: isDark ? 'rgba(26, 26, 37, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(20px)',
+                  border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)'}`,
+                }}
+              >
+                <button
+                  onClick={() => { toggleTheme(); setShowThemeMenu(false); }}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-blue-500/10"
+                  style={{ color: isDark ? '#e2e8f0' : '#1e293b' }}
+                >
+                  {isDark ? <Sun className="h-4 w-4 text-amber-500" /> : <Moon className="h-4 w-4 text-blue-500" />}
+                  <span>{isDark ? 'ธีมสว่าง' : 'ธีมมืด'}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Notification Button */}
           <button 
-            className="relative flex h-10 w-10 items-center justify-center rounded-xl transition-all"
+            className="relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300 hover:scale-105"
             style={{ 
-              backgroundColor: isDark ? '#1a1a2e' : '#f1f5f9',
+              background: isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)',
               color: isDark ? '#94a3b8' : '#64748b',
-              border: isDark ? '1px solid #2d2d44' : '1px solid #e2e8f0'
+              border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)'}`,
             }}
           >
             <Bell className="h-5 w-5" />
             <span 
-              className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full"
+              className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full animate-pulse"
               style={{ 
                 background: 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)',
-                boxShadow: `0 0 0 2px ${isDark ? '#0f0f1a' : '#ffffff'}`
+                boxShadow: `0 0 0 2px ${isDark ? '#0a0a0f' : '#ffffff'}`
               }}
             />
           </button>
+
+          {/* User Avatar */}
+          <div 
+            className="hidden sm:flex h-10 w-10 items-center justify-center rounded-xl ml-1"
+            style={{ 
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              boxShadow: isDark ? '0 0 15px rgba(102, 126, 234, 0.4)' : '0 4px 12px rgba(102, 126, 234, 0.25)',
+            }}
+          >
+            <span className="text-white font-semibold text-sm">เภสัช</span>
+          </div>
         </div>
       </div>
     </header>
