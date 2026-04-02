@@ -15,6 +15,7 @@ type Medication = {
   expiryDate: string | null; // DD/MM/YYYY
   qtyUnder3Months: number | null;
   qtyUnder8Months: number | null;
+  checkedAt: string | null; // ISO date string
   status?: "safe" | "warning" | "expired" | "unknown";
   monthsLeft?: number;
 };
@@ -338,8 +339,30 @@ export default function Home() {
                       {med.isNoStock && <span className="ml-2 text-[10px] text-orange-600 bg-orange-50 px-1 py-0.5 rounded border border-orange-200">No Stock</span>}
                     </td>
                     <td className="border border-gray-800 p-2 text-center whitespace-nowrap">{med.expiryDate || ""}</td>
-                    <td className="border border-gray-800 p-2 text-center">{med.qtyUnder3Months !== null ? med.qtyUnder3Months : ""}</td>
-                    <td className="border border-gray-800 p-2 text-center">{med.qtyUnder8Months !== null ? med.qtyUnder8Months : ""}</td>
+                    <td className="border border-gray-800 p-2 text-center">
+                      {med.qtyUnder3Months !== null ? (
+                        <>
+                          <div>{med.qtyUnder3Months}</div>
+                          {med.checkedAt && (
+                            <div className="text-[9px] text-gray-500 mt-1">
+                              ({new Date(med.checkedAt).toLocaleDateString('th-TH')})
+                            </div>
+                          )}
+                        </>
+                      ) : ""}
+                    </td>
+                    <td className="border border-gray-800 p-2 text-center">
+                      {med.qtyUnder8Months !== null ? (
+                        <>
+                          <div>{med.qtyUnder8Months}</div>
+                          {med.checkedAt && (
+                            <div className="text-[9px] text-gray-500 mt-1">
+                              ({new Date(med.checkedAt).toLocaleDateString('th-TH')})
+                            </div>
+                          )}
+                        </>
+                      ) : ""}
+                    </td>
                     <td className="border border-gray-800 p-2 text-center text-xs">
                         {med.status === "expired" ? "หมดอายุ" : med.status === "warning" ? "ใกล้หมดอายุ" : ""}
                     </td>

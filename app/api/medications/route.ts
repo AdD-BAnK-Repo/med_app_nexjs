@@ -43,6 +43,7 @@ export async function GET(req: Request) {
         expiryDate: inspection?.expiryDate || null,
         qtyUnder3Months: inspection?.qtyUnder3Months !== undefined ? inspection.qtyUnder3Months : null,
         qtyUnder8Months: inspection?.qtyUnder8Months !== undefined ? inspection.qtyUnder8Months : null,
+        checkedAt: inspection?.checkedAt ? inspection.checkedAt.toISOString() : null,
       };
     });
 
