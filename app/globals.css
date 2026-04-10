@@ -560,4 +560,86 @@ body {
   .bg-gray-100 {
     background-color: #f3f4f6 !important;
   }
+
+  /* Safety Report Single Page Print Styles */
+  @page {
+    size: A4 portrait;
+    margin: 5mm 8mm;
+  }
+
+  /* Ensure safety report fits on one page */
+  .print\:p-2 {
+    padding: 0.5rem !important;
+  }
+
+  .print\:p-0\.5 {
+    padding: 0.125rem !important;
+  }
+
+  .print\:text-\[9px\] {
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+  }
+
+  .print\:text-\[10px\] {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+  }
+
+  .print\:text-\[11px\] {
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+  }
+
+  .print\:text-base {
+    font-size: 1rem !important;
+  }
+
+  .print\:text-xs {
+    font-size: 0.75rem !important;
+  }
+
+  .print\:mb-2 {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .print\:mb-4 {
+    margin-bottom: 1rem !important;
+  }
+
+  .print\:mt-2 {
+    margin-top: 0.5rem !important;
+  }
+
+  .print\:mt-4 {
+    margin-top: 1rem !important;
+  }
+
+  .print\:pr-4 {
+    padding-right: 1rem !important;
+  }
+
+  .print\:w-16 {
+    width: 4rem !important;
+  }
+
+  /* Table page break handling */
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  /* Prevent signature area from breaking */
+  .print\:mt-4.print\:pr-4,
+  .print\:mt-2.print\:pr-8 {
+    page-break-inside: avoid;
+  }
 }

@@ -32,18 +32,31 @@ export async function GET(req: Request) {
       }
     });
 
-    const formattedMeds = meds.map(med => {
+    const medsWithLast = await Promise.all(meds.map(async (med) => {
+      const lastInspection = await prisma.inspection.findFirst({
+        where: { medicationId: med.id },
+        orderBy: [
+          { year: 'desc' },
+          { month: 'desc' }
+        ]
+      });
+      return { med, lastInspection };
+    }));
+
+    const formattedMeds = medsWithLast.map(({ med, lastInspection }) => {
       const inspection = med.inspections[0] || null;
+      const isCheckedCurrentMonth = inspection !== null;
       return {
         id: med.id,
         category: med.category,
         name: med.name,
         shelf: med.shelf,
         isNoStock: med.isNoStock,
-        expiryDate: inspection?.expiryDate || null,
-        qtyUnder3Months: inspection?.qtyUnder3Months !== undefined ? inspection.qtyUnder3Months : null,
-        qtyUnder8Months: inspection?.qtyUnder8Months !== undefined ? inspection.qtyUnder8Months : null,
-        checkedAt: inspection?.checkedAt ? inspection.checkedAt.toISOString() : null,
+        expiryDate: inspection?.expiryDate || lastInspection?.expiryDate || null,
+        qtyUnder3Months: inspection?.qtyUnder3Months !== undefined ? inspection.qtyUnder3Months : (lastInspection?.qtyUnder3Months ?? null),
+        qtyUnder8Months: inspection?.qtyUnder8Months !== undefined ? inspection.qtyUnder8Months : (lastInspection?.qtyUnder8Months ?? null),
+        checkedAt: inspection?.checkedAt ? inspection.checkedAt.toISOString() : (lastInspection?.checkedAt ? lastInspection.checkedAt.toISOString() : null),
+        isChecked: isCheckedCurrentMonth,
       };
     });
 

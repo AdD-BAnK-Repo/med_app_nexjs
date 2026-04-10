@@ -16,6 +16,7 @@ type Medication = {
   qtyUnder3Months: number | null;
   qtyUnder8Months: number | null;
   checkedAt: string | null; // ISO date string
+  isChecked?: boolean;
   status?: "safe" | "warning" | "expired" | "unknown";
   monthsLeft?: number;
 };
@@ -101,6 +102,10 @@ export default function Home() {
   const processedMeds = useMemo(() => {
     return meds.map(med => {
       const { status, monthsLeft } = calculateStatus(med.expiryDate, referenceDate);
+      // If not checked this month, set status to unknown
+      if (!med.isChecked) {
+        return { ...med, status: "unknown" as const, monthsLeft: undefined };
+      }
       return { ...med, status, monthsLeft };
     });
   }, [meds, referenceDate]);
@@ -135,12 +140,12 @@ export default function Home() {
       const matchStatus = filterStatus === "all" 
                           ? true 
                           : filterStatus === "checked" 
-                            ? med.expiryDate !== null 
+                            ? med.isChecked === true
                             : filterStatus === "unchecked"
-                            ? med.expiryDate === null
+                            ? med.isChecked !== true
                             : med.status === filterStatus;
       const matchShelf = filterShelf === "all" || (med.shelf && med.shelf.toUpperCase().startsWith(filterShelf));
-                            
+                           
       return matchSearch && matchCategory && matchStatus && matchShelf;
     });
   }, [processedMeds, searchTerm, filterCategory, filterStatus, filterShelf]);
@@ -151,7 +156,8 @@ export default function Home() {
     let safe = 0, warning = 0, expired = 0, unknown = 0;
     
     processedMeds.forEach(m => {
-      if (m.status === "safe") safe++;
+      if (!m.isChecked) unknown++;
+      else if (m.status === "safe") safe++;
       else if (m.status === "warning") warning++;
       else if (m.status === "expired") expired++;
       else unknown++;
@@ -196,6 +202,10 @@ export default function Home() {
     setQty3m(med.qtyUnder3Months !== null ? med.qtyUnder3Months.toString() : "");
     setQty8m(med.qtyUnder8Months !== null ? med.qtyUnder8Months.toString() : "");
 
+    // Default to current reference month/year
+    const defaultMonth = refMonth + 1;
+    const defaultYear = refYear;
+
     if (med.expiryDate) {
       const parts = med.expiryDate.split(/[\/-]/);
       if (parts.length === 3) {
@@ -210,9 +220,10 @@ export default function Home() {
          setSelectedYear(y);
       }
     } else {
+      // No expiry date yet - default to current reference month/year
       setSelectedDay(null);
-      setSelectedMonth(null);
-      setSelectedYear(new Date().getFullYear());
+      setSelectedMonth(defaultMonth);
+      setSelectedYear(defaultYear);
     }
   };
 
@@ -249,7 +260,8 @@ export default function Home() {
               ...m, 
               expiryDate: newDate, 
               qtyUnder3Months: qty3m === "" ? null : parseInt(qty3m),
-              qtyUnder8Months: qty8m === "" ? null : parseInt(qty8m)
+              qtyUnder8Months: qty8m === "" ? null : parseInt(qty8m),
+              isChecked: true
           };
         }
         return m;

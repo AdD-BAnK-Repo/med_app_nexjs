@@ -29,16 +29,19 @@ type DashboardStats = {
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
   const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
     "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
   
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
 
   useEffect(() => {
+    setMounted(true);
     fetch(`/api/dashboard?month=${currentMonth + 1}&year=${currentYear}`)
       .then(res => res.json())
       .then(data => setStats(data))
@@ -390,7 +393,7 @@ export default function Dashboard() {
             <div>
               <p className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>อัปเดตล่าสุด</p>
               <p className="font-semibold" style={{ color: isDark ? '#a78bfa' : '#7c3aed' }}>
-                {new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                {mounted ? new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
               </p>
             </div>
           </div>

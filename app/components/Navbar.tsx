@@ -10,15 +10,22 @@ export function Navbar() {
   const { resolvedTheme, toggleTheme } = useTheme();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const themeMenuRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   const isDark = resolvedTheme === 'dark';
 
-  const currentDate = new Date().toLocaleDateString('th-TH', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    weekday: 'short'
-  });
+  const currentDate = mounted 
+    ? new Date().toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        weekday: 'short'
+      })
+    : 'กำลังโหลด...';
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close theme menu when clicking outside
   useEffect(() => {
