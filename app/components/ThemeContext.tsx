@@ -92,13 +92,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     });
   }, [resolvedTheme]);
 
-  // Prevent hydration mismatch by not rendering theme-dependent content until mounted
+  // Prevent hydration mismatch — show content immediately, theme will resolve on client
   if (!mounted) {
-    return (
-      <div style={{ visibility: 'hidden' }}>
-        {children}
-      </div>
-    );
+    return <>{children}</>;
   }
 
   return (
