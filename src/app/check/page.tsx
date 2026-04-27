@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Search, Calendar, AlertTriangle, CheckCircle, Clock, X, Save, LayoutGrid, List, FileSpreadsheet, Printer, Filter, Menu, Home as HomeIcon, Settings, BarChart3, Plus, ArrowUpRight } from "lucide-react";
+import { MapPin, Search, Calendar, AlertTriangle, CheckCircle, Clock, X, Save, LayoutGrid, List, FileSpreadsheet, Printer, Filter, Menu, Home as HomeIcon, Settings, BarChart3, Plus, ArrowUpRight } from "lucide-react";
 import * as XLSX from "xlsx";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
@@ -72,6 +72,7 @@ export default function Home() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [qty3m, setQty3m] = useState<string>("");
   const [qty8m, setQty8m] = useState<string>("");
+  const [shelf, setShelf] = useState<string>("");
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
@@ -195,6 +196,7 @@ export default function Home() {
     setEditingMed(med);
     setQty3m(med.qtyUnder3Months !== null ? med.qtyUnder3Months.toString() : "");
     setQty8m(med.qtyUnder8Months !== null ? med.qtyUnder8Months.toString() : "");
+    setShelf(med.shelf || "");
 
     if (med.expiryDate) {
       const parts = med.expiryDate.split(/[\/-]/);
@@ -237,7 +239,8 @@ export default function Home() {
             year: refYear,       // Store for current viewing year
             expiryDate: newDate,
             qtyUnder3Months: qty3m,
-            qtyUnder8Months: qty8m
+            qtyUnder8Months: qty8m,
+            shelf: shelf
         })
       });
       
@@ -249,7 +252,8 @@ export default function Home() {
               ...m, 
               expiryDate: newDate, 
               qtyUnder3Months: qty3m === "" ? null : parseInt(qty3m),
-              qtyUnder8Months: qty8m === "" ? null : parseInt(qty8m)
+              qtyUnder8Months: qty8m === "" ? null : parseInt(qty8m),
+              shelf: shelf === "" ? null : shelf
           };
         }
         return m;
@@ -707,6 +711,19 @@ export default function Home() {
                         </div>
                     </div>
                 )}
+            </div>
+
+            {/* Shelf Section */}
+            <div className="mb-6 bg-green-50 p-5 rounded-2xl border border-green-200 shadow-inner">
+                <h3 className="font-bold text-green-800 mb-4 flex items-center"><MapPin size={20} className="mr-2 text-green-600"/> ตำแหน่งที่เก็บยา</h3>
+                
+                <input 
+                    type="text" 
+                    value={shelf}
+                    onChange={(e) => setShelf(e.target.value.toUpperCase())}
+                    placeholder="กรอกตำแหน่ง เช่น A1, B2, C3 เป็นต้น"
+                    className="w-full p-4 border border-green-300 rounded-xl bg-white text-xl font-bold text-green-900 placeholder-green-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
             </div>
             
             {/* Conditional Quantity Section */}
