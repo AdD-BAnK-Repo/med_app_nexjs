@@ -34,18 +34,19 @@ export async function GET(req: Request) {
 
     const formattedMeds = meds.map(med => {
       const inspection = med.inspections[0] || null;
-      return {
+      const result = {
         id: med.id,
         category: med.category,
         name: med.name,
         shelf: med.shelf,
-        location: med.location,
+        location: med.location || null,  // Force include
         isNoStock: med.isNoStock,
         expiryDate: inspection?.expiryDate || null,
         qtyUnder3Months: inspection?.qtyUnder3Months !== undefined ? inspection.qtyUnder3Months : null,
         qtyUnder8Months: inspection?.qtyUnder8Months !== undefined ? inspection.qtyUnder8Months : null,
         checkedAt: inspection?.checkedAt ? inspection.checkedAt.toISOString() : null,
       };
+      return result;
     });
 
     return NextResponse.json(formattedMeds);
