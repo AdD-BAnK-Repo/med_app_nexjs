@@ -11,6 +11,7 @@ type Medication = {
   category: string;
   name: string;
   shelf: string | null;
+  location: string | null;
   isNoStock?: boolean;
   expiryDate: string | null; // DD/MM/YYYY
   qtyUnder3Months: number | null;
@@ -73,6 +74,7 @@ export default function Home() {
   const [qty3m, setQty3m] = useState<string>("");
   const [qty8m, setQty8m] = useState<string>("");
   const [shelf, setShelf] = useState<string>("");
+  const [medLocation, setMedLocation] = useState<string>("");
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
@@ -197,6 +199,7 @@ export default function Home() {
     setQty3m(med.qtyUnder3Months !== null ? med.qtyUnder3Months.toString() : "");
     setQty8m(med.qtyUnder8Months !== null ? med.qtyUnder8Months.toString() : "");
     setShelf(med.shelf || "");
+    setMedLocation(med.location || "");
 
     if (med.expiryDate) {
       const parts = med.expiryDate.split(/[\/-]/);
@@ -240,7 +243,8 @@ export default function Home() {
             expiryDate: newDate,
             qtyUnder3Months: qty3m,
             qtyUnder8Months: qty8m,
-            shelf: shelf
+            shelf: shelf,
+            location: medLocation
         })
       });
       
@@ -253,7 +257,8 @@ export default function Home() {
               expiryDate: newDate, 
               qtyUnder3Months: qty3m === "" ? null : parseInt(qty3m),
               qtyUnder8Months: qty8m === "" ? null : parseInt(qty8m),
-              shelf: shelf === "" ? null : shelf
+              shelf: shelf === "" ? null : shelf,
+              location: medLocation
           };
         }
         return m;
@@ -340,6 +345,8 @@ export default function Home() {
                     <td className="border border-gray-800 p-2 text-center">{index + 1}</td>
                     <td className="border border-gray-800 p-2">
                       {med.name}
+                      {med.location && <span className="ml-2 text-[10px] text-emerald-600 bg-emerald-100 px-1 py-0.5 rounded border border-emerald-200">📍{med.location}</span>}
+                      {!med.location && <span className="ml-1 text-[10px] text-yellow-600 bg-yellow-100 px-1 py-0.5 rounded border border-yellow-200 animate-pulse">⚠️</span>}
                       {med.isNoStock && <span className="ml-2 text-[10px] text-orange-600 bg-orange-50 px-1 py-0.5 rounded border border-orange-200">No Stock</span>}
                     </td>
                     <td className="border border-gray-800 p-2 text-center whitespace-nowrap">{med.expiryDate || ""}</td>
@@ -555,6 +562,7 @@ export default function Home() {
               <div key={med.id} onClick={() => openModal(med)} 
                 className={`bg-white p-4 flex cursor-pointer transition-all border-l-4 hover:shadow-md hover:-translate-y-1 group
                     ${viewMode === "list" ? "flex-col md:flex-row md:items-center justify-between rounded-xl shadow-sm border border-gray-100" : "flex-col rounded-2xl shadow-sm border border-gray-100 gap-3"}
+                    ${med.location ? "bg-emerald-50/50" : "bg-yellow-50"}
                 `}
                 style={{ borderLeftColor: med.status === "expired" ? "#ef4444" : med.status === "warning" ? "#f59e0b" : med.status === "safe" ? "#10b981" : "#e5e7eb" }}
               >
@@ -572,6 +580,16 @@ export default function Home() {
                   </div>
                   <h3 className="text-md font-bold text-gray-800 leading-tight group-hover:text-blue-600 transition-colors">
                     {med.name}
+                    {med.location && (
+                      <span className="ml-2 inline-block align-middle text-[10px] text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-md border border-emerald-200">
+                        📍{med.location}
+                      </span>
+                    )}
+                    {!med.location && (
+                      <span className="ml-2 inline-block align-middle text-[10px] text-yellow-600 bg-yellow-100 px-1.5 py-0.5 rounded-md border border-yellow-200 animate-pulse">
+                        ⚠️
+                      </span>
+                    )}
                     {med.isNoStock && (
                       <span className="ml-2 inline-block align-middle text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-md border border-orange-200">
                         No Stock
@@ -656,7 +674,23 @@ export default function Home() {
             
             <div className="mb-6 border-l-4 border-blue-500 pl-4 py-1 bg-gradient-to-r from-blue-50 to-transparent rounded-r-xl">
                 <span className="text-xs font-black text-blue-600 uppercase tracking-widest">{editingMed.category}</span>
-                <p className="text-gray-900 font-bold text-lg mt-1">{editingMed.name}</p>
+                <div className="flex items-start justify-between gap-3 mt-1">
+                    <p className="text-gray-900 font-bold text-lg">{editingMed.name}</p>
+                    <div className="flex flex-col items-end">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">📍 ตำแหน่ง</label>
+                        <input 
+                            type="text"
+                            value={medLocation}
+                            onChange={(e) => setMedLocation(e.target.value)}
+                            placeholder="เช่น A1, B2"
+                            className={`w-24 text-center font-bold text-sm px-2 py-1 rounded-lg border-2 transition-all outline-none ${
+                                medLocation 
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-700' 
+                                : 'bg-yellow-50 border-yellow-300 text-yellow-700 animate-pulse'
+                            }`}
+                        />
+                    </div>
+                </div>
             </div>
             
             {/* Date Section */}
