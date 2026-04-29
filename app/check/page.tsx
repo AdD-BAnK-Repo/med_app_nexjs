@@ -11,6 +11,7 @@ type Medication = {
   category: string;
   name: string;
   shelf: string | null;
+  location: string | null;
   isNoStock?: boolean;
   expiryDate: string | null; // DD/MM/YYYY
   qtyUnder3Months: number | null;
@@ -73,6 +74,7 @@ export default function Home() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [qty3m, setQty3m] = useState<string>("");
   const [qty8m, setQty8m] = useState<string>("");
+  const [medLocation, setMedLocation] = useState<string>("");
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
@@ -201,6 +203,7 @@ export default function Home() {
     setEditingMed(med);
     setQty3m(med.qtyUnder3Months !== null ? med.qtyUnder3Months.toString() : "");
     setQty8m(med.qtyUnder8Months !== null ? med.qtyUnder8Months.toString() : "");
+    setMedLocation(med.location || "");
 
     // Default to current reference month/year
     const defaultMonth = refMonth + 1;
@@ -249,7 +252,8 @@ export default function Home() {
             expiryDate: newDate,
             // Only send qty if the field is visible — otherwise clear it
             qtyUnder3Months: showQty3m ? qty3m : "",
-            qtyUnder8Months: showQty8m ? qty8m : ""
+            qtyUnder8Months: showQty8m ? qty8m : "",
+            location: medLocation
         })
       });
       
@@ -262,6 +266,7 @@ export default function Home() {
               expiryDate: newDate, 
               qtyUnder3Months: showQty3m ? (qty3m === "" ? null : parseInt(qty3m)) : null,
               qtyUnder8Months: showQty8m ? (qty8m === "" ? null : parseInt(qty8m)) : null,
+              location: medLocation,
               isChecked: true
           };
         }
@@ -632,11 +637,29 @@ export default function Home() {
                   </div>
                   <h3 className="text-md font-bold leading-tight transition-colors" style={{ color: 'var(--text-primary)' }}>
                     {med.name}
+                    {med.location ? (
+                      <button onClick={(e) => { e.stopPropagation(); openModal(med); }}
+                        className="ml-2 text-xs font-black px-2 py-0.5 rounded-lg border border-dashed transition-all hover:scale-105 align-middle inline-flex items-center gap-1"
+                        style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', borderColor: 'rgba(139, 92, 246, 0.4)' }}
+                        title="กดเพื่อแก้ไขตําแหน่ง"
+                      >
+                        📍 {med.location}
+                      </button>
+                    ) : (
+                      <button onClick={(e) => { e.stopPropagation(); openModal(med); }}
+                        className="ml-2 text-xs font-bold px-2 py-0.5 rounded-lg border border-dashed transition-all hover:scale-105 align-middle inline-flex items-center gap-1"
+                        style={{ backgroundColor: 'rgba(139, 92, 246, 0.05)', color: 'var(--text-muted)', borderColor: 'var(--border-color)' }}
+                        title="กดเพื่อเพิ่มตําแหน่ง"
+                      >
+                        + 📍 ตําแหน่ง
+                      </button>
+                    )}
                     {med.isNoStock && (
                       <span className="ml-2 inline-block align-middle text-[10px] px-1.5 py-0.5 rounded-md" style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
                         No Stock
                       </span>
                     )}
+
                   </h3>
                 </div>
                 
@@ -817,6 +840,22 @@ export default function Home() {
                 </div>
             )}
             
+
+            {/* Location Section */}
+            <div className="mb-6 p-5 rounded-2xl border" style={{ backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--border-color)' }}>
+                <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                    📍 ตําแหน่งจัดเก็บยา
+                </h3>
+                <input
+                    type="text"
+                    value={medLocation}
+                    onChange={(e) => setMedLocation(e.target.value)}
+                    placeholder="เช่น A1, B2, ชั้น 3 ตู้ 2"
+                    className="w-full p-3 rounded-xl border text-base font-bold"
+                    style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', borderColor: 'var(--border-color)' }}
+                />
+                <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>ระบุตําแหน่งที่จัดเก็บยา เพื่อสะดวกในการค้นหา</p>
+            </div>
             <button
               onClick={saveData}
               disabled={isSaveDisabled}

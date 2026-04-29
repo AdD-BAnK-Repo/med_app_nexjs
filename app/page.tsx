@@ -20,6 +20,10 @@ import {
 } from 'lucide-react';
 
 type DashboardStats = {
+  safe: number;
+  warning: number;
+  expired: number;
+  unknown: number;
   totalMeds: number;
   noStockMeds: number;
   checkedThisMonth: number;
@@ -56,14 +60,15 @@ export default function Dashboard() {
       id: 'expiry',
       title: 'ตรวจสอบวันหมดอายุ',
       subtitle: 'ยาในคลัง',
-      value: stats?.totalMeds || 0,
+      value: (stats?.warning || 0) + (stats?.expired || 0),
       progress: medProgress,
       progressLabel: `${stats?.checkedThisMonth || 0}/${stats?.totalMeds || 0} รายการ`,
       icon: Pill,
       href: '/check',
       gradient: 'from-blue-500 via-blue-600 to-cyan-500',
       shadowColor: 'rgba(59, 130, 246, 0.3)',
-      accentColor: '#3b82f6'
+      accentColor: '#3b82f6',
+      subLabel: `${stats?.warning || 0} ใกล้หมดอายุ • ${stats?.expired || 0} หมดอายุ`
     },
     {
       id: 'nostock',
@@ -219,6 +224,23 @@ export default function Dashboard() {
                 </div>
                 <p className="text-3xl font-bold" style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>
                   {stats?.totalMeds || 0}
+                </p>
+              </div>
+              <div 
+                className="rounded-2xl p-5 backdrop-blur-sm transition-all duration-300 hover:scale-105"
+                style={{ 
+                  background: (stats?.warning || 0) + (stats?.expired || 0) > 0 
+                    ? 'rgba(245, 158, 11, 0.15)' 
+                    : (isDark ? 'rgba(26, 26, 37, 0.6)' : 'rgba(255, 255, 255, 0.8)'),
+                  border: `1px solid ${(stats?.warning || 0) + (stats?.expired || 0) > 0 ? 'rgba(245, 158, 11, 0.4)' : (isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)')}`,
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="h-4 w-4" style={{ color: (stats?.warning || 0) + (stats?.expired || 0) > 0 ? '#f59e0b' : '#10b981' }} />
+                  <p className="text-xs font-medium" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>ใกล้/หมดอายุ</p>
+                </div>
+                <p className="text-3xl font-bold" style={{ color: (stats?.warning || 0) + (stats?.expired || 0) > 0 ? '#f59e0b' : '#10b981' }}>
+                  {(stats?.warning || 0) + (stats?.expired || 0) || '0'}
                 </p>
               </div>
             </div>

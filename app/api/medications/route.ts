@@ -50,6 +50,7 @@ export async function GET(req: Request) {
         category: med.category,
         name: med.name,
         shelf: med.shelf,
+        location: med.location,
         isNoStock: med.isNoStock,
         // expiryDate: show last known — it's a medication property, not per-month data
         expiryDate: inspection?.expiryDate || lastInspection?.expiryDate || null,
@@ -71,10 +72,18 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const { id, expiryDate, qtyUnder3Months, qtyUnder8Months, month, year } = body;
+    const { id, expiryDate, qtyUnder3Months, qtyUnder8Months, month, year, location } = body;
     
     if (!id || month === undefined || year === undefined) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Update location directly on Medication if provided
+    if (location !== undefined) {
+      await prisma.medication.update({
+        where: { id },
+        data: { location: location || null }
+      });
     }
 
     const dataToUpdate: any = {};

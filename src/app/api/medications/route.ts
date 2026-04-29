@@ -34,12 +34,12 @@ export async function GET(req: Request) {
 
     const formattedMeds = meds.map(med => {
       const inspection = med.inspections[0] || null;
-      const result = {
+      console.log("RAW med:", JSON.stringify(med).substring(0, 200)); const result = {
         id: med.id,
         category: med.category,
         name: med.name,
         shelf: med.shelf,
-        location: med.location || null,  // Force include
+        location: med.location,  // Force include
         isNoStock: med.isNoStock,
         expiryDate: inspection?.expiryDate || null,
         qtyUnder3Months: inspection?.qtyUnder3Months !== undefined ? inspection.qtyUnder3Months : null,
