@@ -45,18 +45,19 @@ export async function GET(req: Request) {
 
     const formattedMeds = medsWithLast.map(({ med, lastInspection }) => {
       const inspection = med.inspections[0] || null;
-      const isCheckedCurrentMonth = inspection !== null;
       return {
         id: med.id,
         category: med.category,
         name: med.name,
         shelf: med.shelf,
         isNoStock: med.isNoStock,
+        // expiryDate: show last known — it's a medication property, not per-month data
         expiryDate: inspection?.expiryDate || lastInspection?.expiryDate || null,
-        qtyUnder3Months: inspection?.qtyUnder3Months !== undefined ? inspection.qtyUnder3Months : (lastInspection?.qtyUnder3Months ?? null),
-        qtyUnder8Months: inspection?.qtyUnder8Months !== undefined ? inspection.qtyUnder8Months : (lastInspection?.qtyUnder8Months ?? null),
-        checkedAt: inspection?.checkedAt ? inspection.checkedAt.toISOString() : (lastInspection?.checkedAt ? lastInspection.checkedAt.toISOString() : null),
-        isChecked: isCheckedCurrentMonth,
+        // qty fields: ONLY show from current month's inspection, no stale fallback
+        qtyUnder3Months: inspection?.qtyUnder3Months !== undefined ? inspection.qtyUnder3Months : null,
+        qtyUnder8Months: inspection?.qtyUnder8Months !== undefined ? inspection.qtyUnder8Months : null,
+        checkedAt: inspection?.checkedAt ? inspection.checkedAt.toISOString() : null,
+        isChecked: inspection !== null,
       };
     });
 

@@ -236,8 +236,8 @@ export default function Home() {
             month: refMonth + 1, // Store for current viewing month
             year: refYear,       // Store for current viewing year
             expiryDate: newDate,
-            qtyUnder3Months: qty3m,
-            qtyUnder8Months: qty8m
+            qtyUnder3Months: showQty3m ? qty3m : "",
+            qtyUnder8Months: showQty8m ? qty8m : ""
         })
       });
       
@@ -248,8 +248,8 @@ export default function Home() {
           return { 
               ...m, 
               expiryDate: newDate, 
-              qtyUnder3Months: qty3m === "" ? null : parseInt(qty3m),
-              qtyUnder8Months: qty8m === "" ? null : parseInt(qty8m)
+              qtyUnder3Months: showQty3m ? (qty3m === "" ? null : parseInt(qty3m)) : null,
+              qtyUnder8Months: showQty8m ? (qty8m === "" ? null : parseInt(qty8m)) : null
           };
         }
         return m;
