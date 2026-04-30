@@ -9,6 +9,7 @@ type Medication = {
   category: string;
   name: string;
   shelf: string | null;
+  location: string | null;
   isNoStock: boolean;
 };
 
@@ -27,6 +28,7 @@ export default function ManageMedications() {
   const [formCategory, setFormCategory] = useState("ยาเม็ด");
   const [formName, setFormName] = useState("");
   const [formShelf, setFormShelf] = useState("");
+  const [formLocation, setFormLocation] = useState("");
   const [formIsNoStock, setFormIsNoStock] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -75,12 +77,14 @@ export default function ManageMedications() {
       setFormCategory(med.category);
       setFormName(med.name);
       setFormShelf(med.shelf || "");
+      setFormLocation(med.location || "");
       setFormIsNoStock(med.isNoStock);
     } else {
       setEditingId(null);
       setFormCategory(filterCategory === "all" ? "ยาเม็ด" : filterCategory);
       setFormName("");
       setFormShelf("");
+      setFormLocation("");
       setFormIsNoStock(false);
     }
     setIsModalOpen(true);
@@ -97,7 +101,7 @@ export default function ManageMedications() {
         const res = await fetch('/api/manage', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: editingId, name: formName.trim(), category: formCategory, shelf: shelfValue, isNoStock: formIsNoStock })
+          body: JSON.stringify({ id: editingId, name: formName.trim(), category: formCategory, shelf: shelfValue, location: formLocation.trim() || null, isNoStock: formIsNoStock })
         });
         if (!res.ok) throw new Error('Failed to update');
         const updatedMed = await res.json();
@@ -379,6 +383,7 @@ export default function ManageMedications() {
                 <tr style={{ background: isDark ? 'rgba(102, 126, 234, 0.08)' : 'rgba(102, 126, 234, 0.06)' }}>
                   <th className="p-4 text-center font-bold text-sm w-16" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>ลำดับ</th>
                   <th className="p-4 text-center font-bold text-sm w-24" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>รหัสตู้ยา</th>
+                  <th className="p-4 text-center font-bold text-sm w-24" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>ตำแหน่ง</th>
                   <th className="p-4 font-bold text-sm w-36" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>หมวดหมู่</th>
                   <th className="p-4 font-bold text-sm" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>ชื่อยา</th>
                   <th className="p-4 text-center font-bold text-sm w-28" style={{ borderBottom: `2px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`, color: isDark ? '#f8fafc' : '#0f172a' }}>สถานะ</th>
@@ -428,6 +433,22 @@ export default function ManageMedications() {
                               }}
                             >
                               {med.shelf}
+                            </span>
+                          ) : (
+                            <span style={{ color: isDark ? '#475569' : '#cbd5e1' }}>-</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-center">
+                          {med.location ? (
+                            <span 
+                              className="px-2 py-1 rounded font-bold text-xs"
+                              style={{
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                border: '1px solid rgba(16, 185, 129, 0.4)',
+                                color: '#10b981',
+                              }}
+                            >
+                              {med.location}
                             </span>
                           ) : (
                             <span style={{ color: isDark ? '#475569' : '#cbd5e1' }}>-</span>
@@ -565,6 +586,24 @@ export default function ManageMedications() {
                   value={formShelf} 
                   onChange={(e) => setFormShelf(e.target.value.toUpperCase())}
                   placeholder="เช่น A1, B12 (ถ้าไม่มีเว้นว่างไว้)"
+                  className="w-full px-4 py-3 rounded-lg outline-none font-medium"
+                  style={{
+                    background: isDark ? 'rgba(10, 10, 15, 0.5)' : 'rgba(241, 245, 249, 0.8)',
+                    border: `1px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}`,
+                    color: isDark ? '#f8fafc' : '#0f172a',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: isDark ? '#94a3b8' : '#475569' }}>
+                  ตำแหน่งจัดเก็บ
+                </label>
+                <input 
+                  type="text" 
+                  value={formLocation} 
+                  onChange={(e) => setFormLocation(e.target.value.toUpperCase())}
+                  placeholder="เชน A60 (ตําแหน่งเฉพาะบนชัน)"
                   className="w-full px-4 py-3 rounded-lg outline-none font-medium"
                   style={{
                     background: isDark ? 'rgba(10, 10, 15, 0.5)' : 'rgba(241, 245, 249, 0.8)',

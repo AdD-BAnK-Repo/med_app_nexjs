@@ -48,7 +48,6 @@ export async function PUT(req: Request) {
         name,
         category,
         shelf: shelf || null,
-        location: shelf || null,
         isNoStock: isNoStock !== undefined ? isNoStock : false
       }
     });

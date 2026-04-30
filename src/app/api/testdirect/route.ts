@@ -1,0 +1,1 @@
+import { NextResponse } from "next/server"; import prisma from "@/lib/prisma"; export async function GET() { const meds = await prisma.medication.findMany({take:1}); const med = meds[0]; return NextResponse.json({ id: med.id, loc: med.location, type: typeof med.location, keys: Object.keys(med) }); }
