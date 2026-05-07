@@ -1,7 +1,7 @@
 {
-  "name": "จัดการยา OPD | โรงพยาบาล",
-  "short_name": "จัดการยา OPD",
-  "description": "ระบบตรวจสอบวันหมดอายุยา จัดการฐานข้อมูลยา และขายเวร",
+  "name": "MED-APP | ระบบตรวจสอบอายุยา",
+  "short_name": "MED-APP",
+  "description": "ระบบตรวจสอบวันหมดอายุยา จัดการฐานข้อมูลยา",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

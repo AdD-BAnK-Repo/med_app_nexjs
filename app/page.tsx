@@ -8,7 +8,6 @@ import {
   ClipboardCheck, 
   Settings, 
   ShieldCheck, 
-  FileText,
   CalendarDays, 
   Zap,
   ArrowUpRight,
@@ -65,7 +64,7 @@ export default function Dashboard() {
       progressLabel: `${stats?.checkedThisMonth || 0}/${stats?.totalMeds || 0} รายการ`,
       icon: Pill,
       href: '/check',
-      gradient: 'from-blue-500 via-blue-600 to-cyan-500',
+      gradient: '#3b82f6, #2563eb, #06b6d4',
       shadowColor: 'rgba(59, 130, 246, 0.3)',
       accentColor: '#3b82f6',
       subLabel: `${stats?.warning || 0} ใกล้หมดอายุ • ${stats?.expired || 0} หมดอายุ`
@@ -78,7 +77,7 @@ export default function Dashboard() {
       progress: null,
       icon: ClipboardCheck,
       href: '/check-nostock',
-      gradient: 'from-amber-500 via-orange-500 to-red-500',
+      gradient: '#f59e0b, #f97316, #ef4444',
       shadowColor: 'rgba(245, 158, 11, 0.3)',
       accentColor: '#f59e0b'
     },
@@ -90,7 +89,7 @@ export default function Dashboard() {
       progress: null,
       icon: Settings,
       href: '/manage',
-      gradient: 'from-violet-500 via-purple-600 to-pink-500',
+      gradient: '#8b5cf6, #9333ea, #ec4899',
       shadowColor: 'rgba(139, 92, 246, 0.3)',
       accentColor: '#8b5cf6'
     },
@@ -103,22 +102,9 @@ export default function Dashboard() {
       progressLabel: '8/12 รายการ',
       icon: ShieldCheck,
       href: '/safety',
-      gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
+      gradient: '#10b981, #14b8a6, #06b6d4',
       shadowColor: 'rgba(16, 185, 129, 0.3)',
       accentColor: '#10b981'
-    },
-    {
-      id: 'shift',
-      title: 'ขายเวร',
-      subtitle: 'เอกสารทั้งหมด',
-      value: 24,
-      progress: 75,
-      progressLabel: '18/24 รายการ',
-      icon: FileText,
-      href: '/shift-exchange',
-      gradient: 'from-rose-500 via-pink-500 to-purple-500',
-      shadowColor: 'rgba(244, 63, 94, 0.3)',
-      accentColor: '#f43f5e'
     },
     {
       id: 'calendar',
@@ -129,7 +115,7 @@ export default function Dashboard() {
       progressLabel: '25/30 รายการ',
       icon: CalendarDays,
       href: '/calendar',
-      gradient: 'from-indigo-500 via-purple-500 to-pink-500',
+      gradient: '#6366f1, #a855f7, #ec4899',
       shadowColor: 'rgba(99, 102, 241, 0.3)',
       accentColor: '#6366f1'
     }
@@ -186,8 +172,8 @@ export default function Dashboard() {
               {/* Title */}
               <div className="space-y-2">
                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                  <span className="gradient-text">ระบบบริหารจัดการยา</span>
-                  <span style={{ color: isDark ? '#e2e8f0' : '#1e293b' }}> OPD</span>
+                  <span className="gradient-text">MED-APP</span>
+                  <span style={{ color: isDark ? '#e2e8f0' : '#1e293b' }}> ระบบตรวจสอบอายุยา</span>
                 </h1>
                 <p className="flex items-center gap-2" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>
                   <Clock className="h-4 w-4" />

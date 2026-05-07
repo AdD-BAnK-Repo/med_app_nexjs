@@ -80,9 +80,9 @@ export function Navbar() {
             </div>
             <div>
               <h1 className="text-lg font-bold leading-tight"> 
-                <span className="gradient-text">ระบบจัดการยา</span>
+                <span className="gradient-text">MED-APP</span>
               </h1>
-              <p className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>OPD Dashboard</p>
+              <p className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>ระบบตรวจสอบอายุยา</p>
             </div>
           </div>
         </div>

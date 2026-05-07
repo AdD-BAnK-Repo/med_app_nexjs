@@ -72,13 +72,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Base Styles */
-* {
-  transition-property: background-color, border-color, color, box-shadow, transform;
-  transition-duration: 0.2s;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
+/* Base Styles - NO global transition on * (prevents click issues) */
 html {
   scroll-behavior: smooth;
 }
@@ -420,6 +414,11 @@ body {
 }
 
 /* Print Styles - Hide Navbar and Sidebar */
+@page {
+  margin: 10mm;
+  size: A4 portrait;
+}
+
 @media print {
   header,
   nav,

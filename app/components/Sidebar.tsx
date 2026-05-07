@@ -9,7 +9,6 @@ import {
   ClipboardCheck, 
   Settings, 
   ShieldCheck, 
-  FileText, 
   LogOut,
   X,
   Pill,
@@ -24,7 +23,6 @@ const menuItems = [
   { href: '/check-nostock', label: 'ยา No Stock', icon: Pill, description: 'รายการยาหมด' },
   { href: '/manage', label: 'จัดการข้อมูล', icon: Settings, description: 'ฐานข้อมูลยา' },
   { href: '/safety', label: 'ความปลอดภัย', icon: ShieldCheck, description: 'ตรวจอุปกรณ์' },
-  { href: '/shift-exchange', label: 'ขายเวร', icon: FileText, description: 'เอกสารเวร' },
   { href: '/calendar', label: 'ตารางงานและเวร', icon: CalendarDays, description: 'ปฏิทิน' },
 ];
 
@@ -75,9 +73,9 @@ export function Sidebar() {
             </div>
             <div>
               <h1 className="font-bold leading-tight"> 
-                <span className="gradient-text">ระบบยา</span>
+                <span className="gradient-text">MED-APP</span>
               </h1>
-              <p className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>OPD Dashboard</p>
+              <p className="text-xs" style={{ color: isDark ? '#64748b' : '#94a3b8' }}>ระบบตรวจสอบอายุยา</p>
             </div>
           </div>
           <button 
@@ -118,7 +116,7 @@ export function Sidebar() {
                     ? '#667eea' 
                     : (isDark ? '#94a3b8' : '#64748b'),
                   border: isActive 
-                    ? `1px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}'` 
+                    ? `1px solid ${isDark ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.25)'}` 
                     : '1px solid transparent',
                   transform: isActive ? 'translateX(4px)' : 'translateX(0)',
                 }}

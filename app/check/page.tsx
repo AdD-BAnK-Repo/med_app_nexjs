@@ -13,13 +13,25 @@ type Medication = {
   shelf: string | null;
   location: string | null;
   isNoStock?: boolean;
-  expiryDate: string | null; // DD/MM/YYYY
+  expiryDate: string | null; // DD/MM/YYYY - nearest expiry from batches
   qtyUnder3Months: number | null;
   qtyUnder8Months: number | null;
   checkedAt: string | null; // ISO date string
   isChecked?: boolean;
   status?: "safe" | "warning" | "expired" | "unknown";
   monthsLeft?: number;
+  batchCount?: number;
+  batches?: { expiryDate: string; qtyUnder3Months: number | null; qtyUnder8Months: number | null }[] | null;
+};
+
+type Batch = {
+  id: string;
+  expiryDate: string;
+  qtyUnder3Months: string;
+  qtyUnder8Months: string;
+  selectedDay: number | null;
+  selectedMonth: number | null;
+  selectedYear: number;
 };
 
 // Calculate status relative to a specific reference date
@@ -69,11 +81,7 @@ export default function Home() {
 
   // Modal State
   const [editingMed, setEditingMed] = useState<Medication | null>(null);
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [qty3m, setQty3m] = useState<string>("");
-  const [qty8m, setQty8m] = useState<string>("");
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [medLocation, setMedLocation] = useState<string>("");
   const [updating, setUpdating] = useState(false);
 
@@ -199,46 +207,94 @@ export default function Home() {
   const handlePrint = () => window.print();
 
   // Modal Handlers
+  const createEmptyBatch = (): Batch => ({
+    id: `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    expiryDate: "",
+    qtyUnder3Months: "",
+    qtyUnder8Months: "",
+    selectedDay: null,
+    selectedMonth: refMonth + 1,
+    selectedYear: refYear,
+  });
+
+  const parseExpiryToBatch = (expiryStr: string, qty3: number | null, qty8: number | null): Batch => {
+    const parts = expiryStr.split(/[\/-]/);
+    let day: number | null = null;
+    let month = refMonth + 1;
+    let year = refYear;
+    if (parts.length === 3) {
+      day = parseInt(parts[0]);
+      month = parseInt(parts[1]);
+      year = parseInt(parts[2]);
+    } else if (parts.length === 2) {
+      month = parseInt(parts[0]);
+      year = parseInt(parts[1]);
+      if (year < 100) year += 2000;
+    }
+    return {
+      id: `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      expiryDate: expiryStr,
+      qtyUnder3Months: qty3 !== null ? qty3.toString() : "",
+      qtyUnder8Months: qty8 !== null ? qty8.toString() : "",
+      selectedDay: day,
+      selectedMonth: month,
+      selectedYear: year,
+    };
+  };
+
   const openModal = (med: Medication) => {
     setEditingMed(med);
-    setQty3m(med.qtyUnder3Months !== null ? med.qtyUnder3Months.toString() : "");
-    setQty8m(med.qtyUnder8Months !== null ? med.qtyUnder8Months.toString() : "");
     setMedLocation(med.location || "");
 
-    // Default to current reference month/year
-    const defaultMonth = refMonth + 1;
-    const defaultYear = refYear;
-
-    if (med.expiryDate) {
-      const parts = med.expiryDate.split(/[\/-]/);
-      if (parts.length === 3) {
-         setSelectedDay(parseInt(parts[0]));
-         setSelectedMonth(parseInt(parts[1]));
-         setSelectedYear(parseInt(parts[2]));
-      } else if (parts.length === 2) {
-         setSelectedDay(null);
-         setSelectedMonth(parseInt(parts[0]));
-         let y = parseInt(parts[1]);
-         if (y < 100) y += 2000;
-         setSelectedYear(y);
-      }
+    if (med.batches && med.batches.length > 0) {
+      setBatches(med.batches.map(b => parseExpiryToBatch(b.expiryDate, b.qtyUnder3Months, b.qtyUnder8Months)));
+    } else if (med.expiryDate) {
+      setBatches([parseExpiryToBatch(med.expiryDate, med.qtyUnder3Months, med.qtyUnder8Months)]);
     } else {
-      // No expiry date yet - default to current reference month/year
-      setSelectedDay(null);
-      setSelectedMonth(defaultMonth);
-      setSelectedYear(defaultYear);
+      setBatches([createEmptyBatch()]);
     }
+  };
+
+  const addBatch = () => setBatches(prev => [...prev, createEmptyBatch()]);
+  const removeBatch = (id: string) => setBatches(prev => prev.length > 1 ? prev.filter(b => b.id !== id) : prev);
+  const updateBatchField = (id: string, field: keyof Batch, value: any) => {
+    setBatches(prev => prev.map(b => {
+      if (b.id !== id) return b;
+      const u = { ...b, [field]: value };
+      if (field === 'selectedMonth') u.selectedDay = null;
+      return u;
+    }));
   };
 
   const saveData = async () => {
     if (!editingMed) return;
     setUpdating(true);
     
-    let newDate = editingMed.expiryDate;
-    if (selectedDay !== null && selectedMonth !== null && selectedYear !== null) {
-        const d = selectedDay.toString().padStart(2, '0');
-        const m = selectedMonth.toString().padStart(2, '0');
-        newDate = `${d}/${m}/${selectedYear}`;
+    const processedBatches = batches
+      .filter(b => b.selectedYear !== null && b.selectedMonth !== null && b.selectedDay !== null)
+      .map(b => {
+        const d = b.selectedDay!.toString().padStart(2, '0');
+        const m = b.selectedMonth!.toString().padStart(2, '0');
+        const expiryDate = `${d}/${m}/${b.selectedYear}`;
+        const exp = new Date(b.selectedYear, b.selectedMonth! - 1, b.selectedDay!);
+        const monthsLeft = (exp.getFullYear() - referenceDate.getFullYear()) * 12 + (exp.getMonth() - referenceDate.getMonth()) + (exp.getDate() - referenceDate.getDate()) / 30;
+        const s3 = monthsLeft <= 3;
+        const s8 = monthsLeft <= 8 && monthsLeft > 3;
+        return {
+          expiryDate,
+          qtyUnder3Months: s3 ? (b.qtyUnder3Months === "" ? null : parseInt(b.qtyUnder3Months)) : null,
+          qtyUnder8Months: s8 ? (b.qtyUnder8Months === "" ? null : parseInt(b.qtyUnder8Months)) : null,
+        };
+      });
+
+    let nearestExpiry = editingMed.expiryDate;
+    for (const b of batches) {
+      if (b.selectedDay !== null && b.selectedMonth !== null) {
+        const d = b.selectedDay.toString().padStart(2, '0');
+        const m = b.selectedMonth.toString().padStart(2, '0');
+        nearestExpiry = `${d}/${m}/${b.selectedYear}`;
+        break;
+      }
     }
     
     try {
@@ -247,31 +303,18 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             id: editingMed.id, 
-            month: refMonth + 1, // Store for current viewing month
-            year: refYear,       // Store for current viewing year
-            expiryDate: newDate,
-            // Only send qty if the field is visible — otherwise clear it
-            qtyUnder3Months: showQty3m ? qty3m : "",
-            qtyUnder8Months: showQty8m ? qty8m : "",
+            month: refMonth + 1,
+            year: refYear,
+            expiryDate: nearestExpiry,
+            qtyUnder3Months: "",
+            qtyUnder8Months: "",
+            batches: processedBatches,
             location: medLocation
         })
       });
       
       if (!res.ok) throw new Error('Failed to update');
-      
-      setMeds(prev => prev.map(m => {
-        if (m.id === editingMed.id) {
-          return { 
-              ...m, 
-              expiryDate: newDate, 
-              qtyUnder3Months: showQty3m ? (qty3m === "" ? null : parseInt(qty3m)) : null,
-              qtyUnder8Months: showQty8m ? (qty8m === "" ? null : parseInt(qty8m)) : null,
-              location: medLocation,
-              isChecked: true
-          };
-        }
-        return m;
-      }));
+      await fetchMeds();
       setEditingMed(null);
     } catch (error) {
       console.error(error);
@@ -300,22 +343,23 @@ export default function Home() {
     if (!month) return [];
     return Array.from({ length: new Date(year, month, 0).getDate() }, (_, i) => i + 1);
   };
-  const days = getDaysInMonth(selectedMonth, selectedYear);
 
-  let tempMonthsLeft: number | null = null;
-  if (selectedDay && selectedMonth && selectedYear) {
-    const exp = new Date(selectedYear, selectedMonth - 1, selectedDay);
-    tempMonthsLeft = (exp.getFullYear() - referenceDate.getFullYear()) * 12 + (exp.getMonth() - referenceDate.getMonth()) + (exp.getDate() - referenceDate.getDate()) / 30;
-  }
-  const showQty3m = tempMonthsLeft !== null && tempMonthsLeft <= 3;
-  const showQty8m = tempMonthsLeft !== null && tempMonthsLeft <= 8 && tempMonthsLeft > 3;
-  const isDateComplete = selectedYear !== null && selectedMonth !== null && selectedDay !== null;
-  const isQtyValid = () => {
-      if (showQty3m && qty3m === "") return false;
-      if (showQty8m && qty8m === "") return false;
-      return true;
+  // Batch validation helpers
+  const getBatchMonthsLeft = (b: Batch): number | null => {
+    if (!b.selectedDay || !b.selectedMonth || !b.selectedYear) return null;
+    const exp = new Date(b.selectedYear, b.selectedMonth - 1, b.selectedDay);
+    return (exp.getFullYear() - referenceDate.getFullYear()) * 12 + (exp.getMonth() - referenceDate.getMonth()) + (exp.getDate() - referenceDate.getDate()) / 30;
   };
-  const isSaveDisabled = updating || !isDateComplete || !isQtyValid();
+  const batchShowQty3m = (b: Batch) => { const m = getBatchMonthsLeft(b); return m !== null && m <= 3; };
+  const batchShowQty8m = (b: Batch) => { const m = getBatchMonthsLeft(b); return m !== null && m <= 8 && m > 3; };
+  const batchDateComplete = (b: Batch) => b.selectedYear !== null && b.selectedMonth !== null && b.selectedDay !== null;
+  const batchQtyValid = (b: Batch) => {
+    if (batchShowQty3m(b) && b.qtyUnder3Months === "") return false;
+    if (batchShowQty8m(b) && b.qtyUnder8Months === "") return false;
+    return true;
+  };
+  const allBatchesValid = batches.length > 0 && batches.every(b => batchDateComplete(b) && batchQtyValid(b));
+  const isSaveDisabled = updating || !allBatchesValid;
 
 
   // Print Template
@@ -637,6 +681,11 @@ export default function Home() {
                   </div>
                   <h3 className="text-md font-bold leading-tight transition-colors" style={{ color: 'var(--text-primary)' }}>
                     {med.name}
+                    {med.batchCount && med.batchCount > 1 && (
+                      <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-md font-bold" style={{ backgroundColor: 'rgba(102, 126, 234, 0.2)', color: '#667eea', border: '1px solid rgba(102, 126, 234, 0.3)' }}>
+                        {med.batchCount} ล็อต
+                      </span>
+                    )}
                     {med.location ? (
                       <button onClick={(e) => { e.stopPropagation(); openModal(med); }}
                         className="ml-2 text-xs font-black px-2 py-0.5 rounded-lg border border-dashed transition-all hover:scale-105 align-middle inline-flex items-center gap-1"
@@ -743,103 +792,103 @@ export default function Home() {
                 <p className="font-bold text-lg mt-1" style={{ color: 'var(--text-primary)' }}>{editingMed.name}</p>
             </div>
             
-            {/* Date Section */}
-            <div className="mb-6 p-5 rounded-2xl border shadow-inner" style={{ backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--border-color)' }}>
-                <h3 className="font-bold mb-4 flex items-center" style={{ color: 'var(--text-primary)' }}><Calendar size={20} className="mr-2 text-blue-400"/> ระบุวันหมดอายุ</h3>
+            {/* Multi-Batch Section */}
+            <div className="mb-6 space-y-4">
+              {batches.map((batch, idx) => {
+                const batchDays = getDaysInMonth(batch.selectedMonth, batch.selectedYear);
+                const s3 = batchShowQty3m(batch);
+                const s8 = batchShowQty8m(batch);
+                const bdc = batchDateComplete(batch);
                 
-                <div className="mb-5">
-                    <label className="block text-xs font-black mb-2 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>1. ปี (Year)</label>
-                    <div className="flex overflow-x-auto pb-2 gap-2 snap-x scrollbar-hide">
-                        {years.map(y => (
-                        <button key={y} onClick={() => { setSelectedYear(y); setSelectedMonth(null); setSelectedDay(null); }}
-                            className="min-w-[70px] py-2.5 rounded-xl text-sm font-bold transition-all snap-start"
-                            style={{ backgroundColor: selectedYear === y ? '#667eea' : 'var(--bg-primary)', color: selectedYear === y ? 'white' : 'var(--text-primary)', border: selectedYear === y ? 'none' : '1px solid var(--border-color)' }}
-                        >
-                            {y}
+                return (
+                  <div key={batch.id} className="rounded-2xl border p-5 relative" style={{ backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--border-color)' }}>
+                    {/* Batch header with remove button */}
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                        <Calendar size={18} className="text-blue-400" /> ล็อตที่ {idx + 1}
+                      </h3>
+                      {batches.length > 1 && (
+                        <button onClick={() => removeBatch(batch.id)} className="p-1.5 rounded-full hover:bg-red-100 transition-colors" title="ลบล็อตนี้">
+                          <X size={16} className="text-red-500" />
                         </button>
+                      )}
+                    </div>
+                    
+                    {/* Year selector */}
+                    <div className="mb-4">
+                      <label className="block text-xs font-black mb-2 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>ปี (Year)</label>
+                      <div className="flex overflow-x-auto pb-2 gap-2 snap-x scrollbar-hide">
+                        {years.map(y => (
+                          <button key={y} onClick={() => updateBatchField(batch.id, 'selectedYear', y)}
+                            className="min-w-[70px] py-2 rounded-xl text-sm font-bold transition-all snap-start"
+                            style={{ backgroundColor: batch.selectedYear === y ? '#667eea' : 'var(--bg-primary)', color: batch.selectedYear === y ? 'white' : 'var(--text-primary)', border: batch.selectedYear === y ? 'none' : '1px solid var(--border-color)' }}
+                          >{y}</button>
                         ))}
+                      </div>
                     </div>
-                </div>
 
-                {selectedYear !== null && (
-                    <div className="mb-5 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <label className="block text-xs font-black text-slate-500 mb-2 uppercase tracking-wider">2. เดือน (Month)</label>
+                    {/* Month selector */}
+                    {batch.selectedYear !== null && (
+                      <div className="mb-4">
+                        <label className="block text-xs font-black mb-2 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>เดือน (Month)</label>
                         <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                            {months.map(m => (
-                            <button key={m.value} onClick={() => { setSelectedMonth(m.value); setSelectedDay(null); }}
-                                className={`py-2 rounded-xl text-xs font-bold transition-all ${
-                                selectedMonth === m.value ? 'bg-blue-600 text-white shadow-md scale-105' : 'bg-white border text-slate-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700'
-                                }`}
-                            >
-                                {m.label}
+                          {months.map(m => (
+                            <button key={m.value} onClick={() => updateBatchField(batch.id, 'selectedMonth', m.value)}
+                              className={`py-2 rounded-xl text-xs font-bold transition-all ${batch.selectedMonth === m.value ? 'bg-blue-600 text-white shadow-md scale-105' : 'bg-white border text-slate-600 hover:bg-blue-50'}`}>
+                              {m.label}
                             </button>
-                            ))}
+                          ))}
                         </div>
-                    </div>
-                )}
+                      </div>
+                    )}
 
-                {selectedMonth !== null && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                        <label className="block text-xs font-black text-slate-500 mb-2 uppercase tracking-wider">3. วันที่ (Day)</label>
+                    {/* Day selector */}
+                    {batch.selectedMonth !== null && (
+                      <div className="mb-4">
+                        <label className="block text-xs font-black mb-2 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>วันที่ (Day)</label>
                         <div className="grid grid-cols-7 gap-1.5">
-                            {days.map(d => (
-                            <button key={d} onClick={() => setSelectedDay(d)}
-                                className={`py-2 rounded-lg text-sm font-bold transition-all ${
-                                selectedDay === d ? 'bg-blue-600 text-white shadow-md scale-110' : 'bg-white border text-slate-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700'
-                                }`}
-                            >
-                                {d}
+                          {batchDays.map(d => (
+                            <button key={d} onClick={() => updateBatchField(batch.id, 'selectedDay', d)}
+                              className={`py-2 rounded-lg text-sm font-bold transition-all ${batch.selectedDay === d ? 'bg-blue-600 text-white shadow-md scale-110' : 'bg-white border text-slate-600 hover:bg-blue-50'}`}>
+                              {d}
                             </button>
-                            ))}
+                          ))}
                         </div>
-                    </div>
-                )}
+                      </div>
+                    )}
+
+                    {/* Qty fields (conditional on expiry proximity) */}
+                    {bdc && (s3 || s8) && (
+                      <div className="space-y-3 mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-color)' }}>
+                        {s3 && (
+                          <div>
+                            <label className="block text-sm font-bold text-red-600 mb-1">จำนวนเม็ด ({'<'} 3 เดือน) <span className="text-xs">*บังคับ</span></label>
+                            <input type="number" value={batch.qtyUnder3Months}
+                              onChange={(e) => updateBatchField(batch.id, 'qtyUnder3Months', e.target.value)}
+                              placeholder="0" className="w-full p-3 rounded-xl border-2 border-red-400 bg-red-50 text-xl font-black text-red-900 focus:outline-none" />
+                          </div>
+                        )}
+                        {s8 && (
+                          <div>
+                            <label className="block text-sm font-bold text-orange-600 mb-1">จำนวนเม็ด ({'<'} 8 เดือน) <span className="text-xs">*บังคับ</span></label>
+                            <input type="number" value={batch.qtyUnder8Months}
+                              onChange={(e) => updateBatchField(batch.id, 'qtyUnder8Months', e.target.value)}
+                              placeholder="0" className="w-full p-3 rounded-xl border-2 border-orange-400 bg-orange-50 text-xl font-black text-orange-900 focus:outline-none" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Add batch button */}
+              <button type="button" onClick={addBatch}
+                className="w-full py-3 rounded-2xl font-bold border-2 border-dashed transition-all hover:bg-blue-50 flex items-center justify-center gap-2"
+                style={{ borderColor: '#667eea', color: '#667eea' }}>
+                <Plus size={18} /> เพิ่มล็อต
+              </button>
             </div>
-            
-            {/* Conditional Quantity Section */}
-            {isDateComplete && (showQty3m || showQty8m) && (
-                <div className="mb-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center gap-3 mb-3 text-red-600 font-bold bg-red-50 p-3 rounded-xl border border-red-200">
-                        <div className="bg-red-100 p-2 rounded-full animate-pulse"><AlertTriangle size={20} /></div>
-                        <span>ยาใกล้หมดอายุ! ระบุจำนวนคงเหลือ</span>
-                    </div>
-
-                    {showQty3m && (
-                        <div className="bg-white p-5 rounded-2xl border-2 border-red-400 shadow-md relative overflow-hidden group focus-within:border-red-500 focus-within:ring-4 focus-within:ring-red-100 transition-all">
-                            <div className="absolute top-0 left-0 w-1.5 h-full bg-red-500"></div>
-                            <label className="block text-sm font-black text-red-800 mb-2 pl-2 flex items-center justify-between">
-                                <span>จำนวนเม็ด (อายุน้อยกว่า 3 เดือน)</span>
-                                <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded uppercase">บังคับ</span>
-                            </label>
-                            <input 
-                                type="number" 
-                                value={qty3m}
-                                onChange={(e) => setQty3m(e.target.value)}
-                                placeholder="0"
-                                className="w-full p-4 border-none rounded-xl bg-red-50 text-2xl font-black text-red-900 placeholder-red-300 focus:outline-none"
-                            />
-                        </div>
-                    )}
-
-                    {showQty8m && (
-                        <div className="bg-white p-5 rounded-2xl border-2 border-orange-400 shadow-md relative overflow-hidden group focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-100 transition-all">
-                            <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
-                            <label className="block text-sm font-black text-orange-800 mb-2 pl-2 flex items-center justify-between">
-                                <span>จำนวนเม็ด (อายุน้อยกว่า 8 เดือน)</span>
-                                <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded uppercase">บังคับ</span>
-                            </label>
-                            <input 
-                                type="number" 
-                                value={qty8m}
-                                onChange={(e) => setQty8m(e.target.value)}
-                                placeholder="0"
-                                className="w-full p-4 border-none rounded-xl bg-orange-50 text-2xl font-black text-orange-900 placeholder-orange-300 focus:outline-none"
-                            />
-                        </div>
-                    )}
-                </div>
-            )}
-            
 
             {/* Location Section */}
             <div className="mb-6 p-5 rounded-2xl border" style={{ backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--border-color)' }}>
@@ -857,6 +906,7 @@ export default function Home() {
                 <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>ระบุตําแหน่งที่จัดเก็บยา เพื่อสะดวกในการค้นหา</p>
             </div>
             <button
+              type="button"
               onClick={saveData}
               disabled={isSaveDisabled}
               className={`w-full py-4 rounded-2xl font-black text-white shadow-xl transition-all flex justify-center items-center gap-3 text-lg tracking-wide ${
@@ -865,9 +915,8 @@ export default function Home() {
             >
               <Save size={24} className={updating ? "animate-spin" : ""} />
               <span>
-                  {updating ? 'กำลังอัปเดตระบบ...' : 
-                   !isDateComplete ? 'กรุณาเลือกวัน/เดือน/ปี ให้ครบ' : 
-                   !isQtyValid() ? 'กรุณาระบุจำนวนยา' : 
+                  {updating ? 'กำลังอัปเดตระบบ...' :
+                   !allBatchesValid ? 'กรุณากรอกวัน/เดือน/ปี และจำนวนให้ครบทุกล็อต' :
                    'บันทึกข้อมูล'}
               </span>
             </button>

@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ระบบบริหารจัดการยา OPD | โรงพยาบาล",
-  description: "ระบบตรวจสอบวันหมดอายุยา จัดการฐานข้อมูลยา และขายเวร",
+  title: "MED-APP | ระบบตรวจสอบอายุยา",
+  description: "ระบบตรวจสอบวันหมดอายุยา จัดการฐานข้อมูลยา OPD",
   icons: [
     {
       url: "/icons/icon-192.png",
@@ -52,7 +52,7 @@ export default function RootLayout({
               <div className="flex flex-1 flex-col min-w-0 lg:ml-64 print:ml-0">
                 <header className="print:hidden"><Navbar /></header>
                 <main className="flex-1 p-4 sm:p-6 lg:p-8 transition-colors duration-300 print:p-0 print:block">
-                  <div className="mx-auto max-w-7xl">
+                  <div className="mx-auto max-w-7xl print:max-w-none print:mx-0">
                     {children}
                   </div>
                 </main>

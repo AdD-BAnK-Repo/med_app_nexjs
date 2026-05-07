@@ -28,6 +28,7 @@ model Inspection {
   qtyUnder3Months Int?
   qtyUnder8Months Int?
   checkedAt       DateTime   @default(now())
+  batches         String?    // JSON array of batch objects
   medication      Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
 
   @@unique([medicationId, month, year])
