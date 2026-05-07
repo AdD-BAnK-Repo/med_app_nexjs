@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Printer, Download, Calendar } from 'lucide-react';
+import { ArrowLeft, Printer, Calendar } from 'lucide-react';
 
 export default function CombinedSafetyReport() {
   const [fireItems, setFireItems] = useState<any[]>([]);
@@ -44,11 +44,16 @@ export default function CombinedSafetyReport() {
 
   const monthLabel = months.find(m => m.value === month)?.label;
 
-  const getRowColor = (overallStatus: string) => {
-    if (overallStatus === 'พร้อมใช้') return 'bg-green-50 border-l-4 border-l-green-500';
-    if (overallStatus === 'ไม่พร้อมใช้') return 'bg-red-50 border-l-4 border-l-red-500';
-    return 'bg-yellow-50 border-l-4 border-l-yellow-500';
-  };
+  // --- Stats ---
+  const fireChecked = fireItems.filter(i => i.inspections?.length > 0).length;
+  const fireReady = fireItems.filter(i => i.inspections?.[0]?.overallStatus === 'พร้อมใช้งาน').length;
+  const fireDefective = fireChecked - fireReady;
+  const fireUnchecked = fireItems.length - fireChecked;
+
+  const lightChecked = lightItems.filter(i => i.inspections?.length > 0).length;
+  const lightReady = lightItems.filter(i => i.inspections?.[0]?.overallStatus === 'พร้อมใช้งาน').length;
+  const lightDefective = lightChecked - lightReady;
+  const lightUnchecked = lightItems.length - lightChecked;
 
   return (
     <div className="min-h-screen bg-slate-100 pb-20 print:bg-white print:pb-0">
@@ -68,7 +73,7 @@ export default function CombinedSafetyReport() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-2 md:px-4 -mt-12 relative z-20 print:mt-0 print:p-0 text-slate-800">
+      <div className="max-w-7xl mx-auto px-2 md:px-4 -mt-12 relative z-20 print:mt-0 print:p-0 print:max-w-none print:w-full print:px-0 text-slate-800" suppressHydrationWarning>
         
         {/* Filter */}
         <div className="bg-white rounded-2xl shadow-lg p-4 mb-4 print:hidden">
@@ -92,94 +97,126 @@ export default function CombinedSafetyReport() {
         {loading ? (
           <div className="text-center py-20 animate-pulse font-bold text-slate-500 print:hidden">กำลังโหลดข้อมูล...</div>
         ) : (
-          <div className="bg-white p-3 md:p-6 print:p-1 rounded-2xl shadow-lg print:shadow-none font-sarabun text-sm md:text-base print:text-[10px]">
+          <div className="bg-white rounded-2xl shadow-lg print:rounded-none print:shadow-none print:p-0 p-4 md:p-8 font-sans">
             
-            <div className="text-center font-bold text-lg md:text-xl print:text-sm mb-4 print:mb-1">
-              รายงานการตรวจสอบถังดับเพลิง และ ไฟฉุกเฉิน ประจำเดือน {monthLabel} พ.ศ. {year + 543}
+            {/* Print Header */}
+            <div className="text-center print:mb-2 mb-4">
+              <div className="font-bold text-lg md:text-xl print:text-[14pt] leading-relaxed">
+                รายงานการตรวจสอบถังดับเพลิง และ ไฟฉุกเฉิน
+              </div>
+              <div className="font-bold text-base md:text-lg print:text-[12pt] text-slate-600">
+                ประจำเดือน {monthLabel} พ.ศ. {year + 543}
+              </div>
             </div>
 
-            {/* Fire Extinguisher Table */}
-            <div className="mb-3 font-bold text-base print:text-xs">ตรวจสอบถังดับเพลิง</div>
-            <table className="w-full border-collapse border border-black text-center mb-6 print:mb-2">
+            {/* ===== FIRE EXTINGUISHER TABLE ===== */}
+            <div className="font-bold text-base print:text-[12pt] mb-1 print:mb-1">
+              1. ตรวจสอบถังดับเพลิง
+            </div>
+            <table className="w-full border-collapse border-2 border-black text-center mb-2 print:mb-1">
               <thead>
-                <tr className="bg-slate-200 print:bg-gray-200">
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px] w-20">วันที่</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px] text-left">จุดที่ตรวจสอบ</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">หัวฉีด/สายฉีด</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">สลักล็อค</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">คว่ำถัง</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">เข็มวัด/น้ำหนัก</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">สภาพการใช้งาน</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">ผู้ตรวจ</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">หมายเหตุ</th>
+                <tr className="bg-gray-200">
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] w-16">ลำดับ</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">จุดที่ติดตั้ง</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">หัวฉีด/สายฉีด</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">สลักล็อค</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">คว่ำถัง</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">เข็มวัด/น้ำหนัก</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">สภาพ</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">ผู้ตรวจ</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">หมายเหตุ</th>
                 </tr>
               </thead>
               <tbody>
                 {fireItems.map((item, i) => {
                   const insp = item.inspections?.[0];
-                  const isReady = insp?.overallStatus === 'พร้อมใช้';
-                  const rowClass = getRowColor(insp?.overallStatus);
+                  const isReady = insp?.overallStatus === 'พร้อมใช้งาน';
                   return (
-                    <tr key={i} className={rowClass}>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.checkedAt ? new Date(insp.checkedAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px] text-left">{item.location}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.nozzleStatus || '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.pinStatus || '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.invertStatus || '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.gaugeStatus || '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px] font-bold" style={{ color: isReady ? '#16a34a' : '#dc2626' }}>{insp?.overallStatus || '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.inspector || '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.note || ''}</td>
+                    <tr key={i}>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{i + 1}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] text-left">{item.location}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{insp?.nozzleStatus || '-'}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{insp?.pinStatus || '-'}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{insp?.invertStatus || '-'}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{insp?.gaugeStatus || '-'}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] font-bold" style={{ color: isReady ? '#16a34a' : !insp ? '#999' : '#dc2626' }}>
+                        {insp?.overallStatus || 'ยังไม่ตรวจ'}
+                      </td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{insp?.inspector || '-'}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{insp?.note || ''}</td>
                     </tr>
                   )
                 })}
+                {/* Summary Row */}
+                <tr className="bg-gray-100 font-bold">
+                  <td colSpan={6} className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] text-right">
+                    รวม (ตรวจ {fireChecked}/{fireItems.length}) :
+                  </td>
+                  <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] text-green-700">พร้อม {fireReady}</td>
+                  <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] text-red-700">ชำรุด {fireDefective}</td>
+                  <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] text-gray-500">ไม่ตรวจ {fireUnchecked}</td>
+                </tr>
               </tbody>
             </table>
 
-            {/* Emergency Light Table */}
-            <div className="mb-3 font-bold text-base print:text-xs">ตรวจสอบไฟฉุกเฉิน</div>
-            <table className="w-full border-collapse border border-black text-center mb-12 print:mb-2">
+            {/* ===== EMERGENCY LIGHT TABLE ===== */}
+            <div className="font-bold text-base print:text-[12pt] mb-1 print:mb-1 mt-4 print:mt-2">
+              2. ตรวจสอบไฟฉุกเฉิน
+            </div>
+            <table className="w-full border-collapse border-2 border-black text-center mb-2 print:mb-1">
               <thead>
-                <tr className="bg-slate-200 print:bg-gray-200">
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px] w-20">วันที่</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px] text-left">ตำแหน่งที่ติดตั้ง</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">LED / AC</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">สถานะการชาร์จ</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">ทดสอบตัดไฟ</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">สภาพการใช้งาน</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">ผู้ตรวจ</th>
-                  <th className="border border-black p-1.5 print:p-0.5 print:text-[8px]">หมายเหตุ</th>
+                <tr className="bg-gray-200">
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] w-16">ลำดับ</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">ตำแหน่งที่ติดตั้ง</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">LED / AC</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">สถานะชาร์จ</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">ทดสอบตัดไฟ</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">สภาพ</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">ผู้ตรวจ</th>
+                  <th className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">หมายเหตุ</th>
                 </tr>
               </thead>
               <tbody>
                 {lightItems.map((item, i) => {
                   const insp = item.inspections?.[0];
-                  const isReady = insp?.overallStatus === 'พร้อมใช้';
-                  const rowClass = getRowColor(insp?.overallStatus);
+                  const isReady = insp?.overallStatus === 'พร้อมใช้งาน';
                   return (
-                    <tr key={i} className={rowClass}>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.checkedAt ? new Date(insp.checkedAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px] text-left">
-                        {item.location}
+                    <tr key={i}>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{i + 1}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] text-left">{item.location}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{insp?.ledStatus || '-'}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{insp?.chargeStatus || '-'}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{insp?.testStatus || '-'}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] font-bold" style={{ color: isReady ? '#16a34a' : !insp ? '#999' : '#dc2626' }}>
+                        {insp?.overallStatus || 'ยังไม่ตรวจ'}
                       </td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.ledStatus || '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.chargeStatus || '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.testStatus || '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px] font-bold" style={{ color: isReady ? '#16a34a' : '#dc2626' }}>{insp?.overallStatus || '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.inspector || '-'}</td>
-                      <td className="border border-black p-1.5 print:p-0.5 print:text-[8px]">{insp?.note || ''}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{insp?.inspector || '-'}</td>
+                      <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt]">{insp?.note || ''}</td>
                     </tr>
                   )
                 })}
+                {/* Summary Row */}
+                <tr className="bg-gray-100 font-bold">
+                  <td colSpan={5} className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] text-right">
+                    รวม (ตรวจ {lightChecked}/{lightItems.length}) :
+                  </td>
+                  <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] text-green-700">พร้อม {lightReady}</td>
+                  <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] text-red-700">ชำรุด {lightDefective}</td>
+                  <td className="border border-black px-2 py-1 print:px-1 print:py-0.5 text-[12px] print:text-[10pt] text-gray-500">ไม่ตรวจ {lightUnchecked}</td>
+                </tr>
               </tbody>
             </table>
 
-            {/* Signature Area */}
-            <div className="flex flex-col items-end mt-8 pr-8 print:mt-2 print:pr-2">
-              <div className="text-center print:text-[9px]">
-                <div className="mb-3 print:mb-1">ผู้ตรวจสอบ ......................................................................</div>
-                <div>(นางสาวปิยรัตน์ ธรรมโชติวร)</div>
-                <div className="mt-0.5">หัวหน้ากลุ่มงานเภสัชกรรมและคุ้มครองผู้บริโภค</div>
+            {/* ===== SIGNATURE AREA ===== */}
+            <div className="mt-6 print:mt-4">
+              <div className="flex justify-end">
+                <div className="text-center w-80 print:w-72">
+                  <div className="mb-8 print:mb-6 text-[14px] print:text-[11pt]">
+                    ผู้ตรวจสอบ ......................................................................
+                  </div>
+                  <div className="font-bold text-[14px] print:text-[11pt]">(นางสาวปิยรัตน์ ธรรมโชติวร)</div>
+                  <div className="text-[13px] print:text-[10pt] text-slate-600">หัวหน้ากลุ่มงานเภสัชกรรมและคุ้มครองผู้บริโภค</div>
+                </div>
               </div>
             </div>
 

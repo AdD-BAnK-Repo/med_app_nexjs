@@ -201,35 +201,36 @@ export default function FireExtinguisherCheck() {
 
           {/* Table for Print View */}
           <div className="hidden print:block w-full">
-            <table className="w-full border-collapse border border-slate-300 text-sm">
+            <table className="w-full border-collapse border-2 border-black text-sm">
               <thead>
-                <tr className="bg-slate-100 text-slate-800">
-                  <th className="border border-slate-300 p-2 text-center w-12">ที่</th>
-                  <th className="border border-slate-300 p-2 text-left">จุดติดตั้ง / รหัสครุภัณฑ์</th>
-                  <th className="border border-slate-300 p-2 text-center">สลักล็อค</th>
-                  <th className="border border-slate-300 p-2 text-center">สายฉีด</th>
-                  <th className="border border-slate-300 p-2 text-center">เกจความดัน</th>
-                  <th className="border border-slate-300 p-2 text-center">การคว่ำถัง</th>
-                  <th className="border border-slate-300 p-2 text-center">สถานะรวม</th>
-                  <th className="border border-slate-300 p-2 text-left">ผู้ตรวจ/วันที่</th>
+                <tr className="bg-gray-200">
+                  <th className="border border-black p-1.5 text-center w-10 print:text-[10pt]">ที่</th>
+                  <th className="border border-black p-1.5 text-left print:text-[10pt]">จุดติดตั้ง / รหัสครุภัณฑ์</th>
+                  <th className="border border-black p-1.5 text-center print:text-[10pt]">สลักล็อค</th>
+                  <th className="border border-black p-1.5 text-center print:text-[10pt]">สายฉีด</th>
+                  <th className="border border-black p-1.5 text-center print:text-[10pt]">เกจความดัน</th>
+                  <th className="border border-black p-1.5 text-center print:text-[10pt]">การคว่ำถัง</th>
+                  <th className="border border-black p-1.5 text-center print:text-[10pt]">สถานะรวม</th>
+                  <th className="border border-black p-1.5 text-left print:text-[10pt]">ผู้ตรวจ/วันที่</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, index) => {
                   const insp = item.inspections?.[0];
+                  const isReady = insp?.overallStatus === 'พร้อมใช้งาน';
                   return (
                     <tr key={item.id}>
-                      <td className="border border-slate-300 p-2 text-center">{index + 1}</td>
-                      <td className="border border-slate-300 p-2">
+                      <td className="border border-black p-1.5 text-center print:text-[10pt]">{index + 1}</td>
+                      <td className="border border-black p-1.5 print:text-[10pt]">
                         <div className="font-bold">{item.location}</div>
                         <div className="text-xs text-slate-500">{item.assetCode || '-'}</div>
                       </td>
-                      <td className="border border-slate-300 p-2 text-center">{insp?.pinStatus || '-'}</td>
-                      <td className="border border-slate-300 p-2 text-center">{insp?.nozzleStatus || '-'}</td>
-                      <td className="border border-slate-300 p-2 text-center">{insp?.gaugeStatus || '-'}</td>
-                      <td className="border border-slate-300 p-2 text-center">{insp?.invertStatus || '-'}</td>
-                      <td className="border border-slate-300 p-2 text-center font-bold text-slate-700">{insp?.overallStatus || 'ยังไม่ตรวจ'}</td>
-                      <td className="border border-slate-300 p-2">
+                      <td className="border border-black p-1.5 text-center print:text-[10pt]">{insp?.pinStatus || '-'}</td>
+                      <td className="border border-black p-1.5 text-center print:text-[10pt]">{insp?.nozzleStatus || '-'}</td>
+                      <td className="border border-black p-1.5 text-center print:text-[10pt]">{insp?.gaugeStatus || '-'}</td>
+                      <td className="border border-black p-1.5 text-center print:text-[10pt]">{insp?.invertStatus || '-'}</td>
+                      <td className="border border-black p-1.5 text-center font-bold print:text-[10pt]" style={{ color: isReady ? '#16a34a' : !insp ? '#999' : '#dc2626' }}>{insp?.overallStatus || 'ยังไม่ตรวจ'}</td>
+                      <td className="border border-black p-1.5 print:text-[10pt]">
                         {insp ? (
                           <div className="text-xs">
                             <div>{insp.inspector}</div>

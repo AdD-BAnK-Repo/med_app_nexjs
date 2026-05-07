@@ -31,6 +31,12 @@ export default function LightInspectForm() {
   ];
 
   useEffect(() => {
+    // Load last inspector name from localStorage
+    const lastInspector = typeof window !== 'undefined' ? localStorage.getItem('lastInspector') : null;
+    if (lastInspector) {
+      setForm(f => ({ ...f, inspector: lastInspector }));
+    }
+
     fetch('/api/safety/light').then(res => res.json()).then(data => {
       const target = data.find((d: any) => d.id === id);
       if(target) setLocationName(target.location);
@@ -49,6 +55,10 @@ export default function LightInspectForm() {
     });
 
     if(res.ok) {
+      // Remember inspector name for next time
+      if (typeof window !== 'undefined' && form.inspector) {
+        localStorage.setItem('lastInspector', form.inspector);
+      }
       alert('บันทึกข้อมูลเรียบร้อยแล้ว');
       router.push('/safety/light');
     } else {

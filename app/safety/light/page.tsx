@@ -200,33 +200,34 @@ export default function EmergencyLightCheck() {
 
           {/* Table for Print View */}
           <div className="hidden print:block w-full">
-            <table className="w-full border-collapse border border-slate-300 text-sm">
+            <table className="w-full border-collapse border-2 border-black text-sm">
               <thead>
-                <tr className="bg-slate-100 text-slate-800">
-                  <th className="border border-slate-300 p-2 text-center w-12">ที่</th>
-                  <th className="border border-slate-300 p-2 text-left">จุดติดตั้ง / รหัสครุภัณฑ์</th>
-                  <th className="border border-slate-300 p-2 text-center">LED/AC</th>
-                  <th className="border border-slate-300 p-2 text-center">สถานะการชาร์จ</th>
-                  <th className="border border-slate-300 p-2 text-center">ทดสอบตัดไฟ</th>
-                  <th className="border border-slate-300 p-2 text-center">สถานะรวม</th>
-                  <th className="border border-slate-300 p-2 text-left">ผู้ตรวจ/วันที่</th>
+                <tr className="bg-gray-200">
+                  <th className="border border-black p-1.5 text-center w-10 print:text-[10pt]">ที่</th>
+                  <th className="border border-black p-1.5 text-left print:text-[10pt]">จุดติดตั้ง / รหัสครุภัณฑ์</th>
+                  <th className="border border-black p-1.5 text-center print:text-[10pt]">LED/AC</th>
+                  <th className="border border-black p-1.5 text-center print:text-[10pt]">สถานะการชาร์จ</th>
+                  <th className="border border-black p-1.5 text-center print:text-[10pt]">ทดสอบตัดไฟ</th>
+                  <th className="border border-black p-1.5 text-center print:text-[10pt]">สถานะรวม</th>
+                  <th className="border border-black p-1.5 text-left print:text-[10pt]">ผู้ตรวจ/วันที่</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, index) => {
                   const insp = item.inspections?.[0];
+                  const isReady = insp?.overallStatus === 'พร้อมใช้งาน';
                   return (
                     <tr key={item.id}>
-                      <td className="border border-slate-300 p-2 text-center">{index + 1}</td>
-                      <td className="border border-slate-300 p-2">
+                      <td className="border border-black p-1.5 text-center print:text-[10pt]">{index + 1}</td>
+                      <td className="border border-black p-1.5 print:text-[10pt]">
                         <div className="font-bold">{item.location}</div>
                         <div className="text-xs text-slate-500">{item.assetCode || '-'}</div>
                       </td>
-                      <td className="border border-slate-300 p-2 text-center">{insp?.ledStatus || '-'}</td>
-                      <td className="border border-slate-300 p-2 text-center">{insp?.chargeStatus || '-'}</td>
-                      <td className="border border-slate-300 p-2 text-center">{insp?.testStatus || '-'}</td>
-                      <td className="border border-slate-300 p-2 text-center font-bold text-slate-700">{insp?.overallStatus || 'ยังไม่ตรวจ'}</td>
-                      <td className="border border-slate-300 p-2">
+                      <td className="border border-black p-1.5 text-center print:text-[10pt]">{insp?.ledStatus || '-'}</td>
+                      <td className="border border-black p-1.5 text-center print:text-[10pt]">{insp?.chargeStatus || '-'}</td>
+                      <td className="border border-black p-1.5 text-center print:text-[10pt]">{insp?.testStatus || '-'}</td>
+                      <td className="border border-black p-1.5 text-center font-bold print:text-[10pt]" style={{ color: isReady ? '#16a34a' : !insp ? '#999' : '#dc2626' }}>{insp?.overallStatus || 'ยังไม่ตรวจ'}</td>
+                      <td className="border border-black p-1.5 print:text-[10pt]">
                         {insp ? (
                           <div className="text-xs">
                             <div>{insp.inspector}</div>
